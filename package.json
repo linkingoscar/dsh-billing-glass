@@ -1,7 +1,7 @@
 {
   "name": "dsh-billing-glass",
   "version": "0.1.0",
-  "description": "液态玻璃材质的 API 计费悬浮卡（DeepSeek Harness Web GUI）：多供应商余额/会话费用/今日消费，DeepSeek 优先，供应商可扩展。",
+  "description": "Liquid-glass billing overlay for the DeepSeek Harness Web GUI: provider balances, session cost, daily spend and token buckets. DeepSeek-first with an extensible provider registry.",
   "type": "module",
   "main": "lib/index.js",
   "files": [

@@ -1,171 +1,180 @@
-# dsh-billing-glass — 液态玻璃计费悬浮卡
+# dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![version](https://img.shields.io/badge/version-0.1.0-informational)](#)
 [![harness](https://img.shields.io/badge/DeepSeek%20Harness-web%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
-DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**，常驻右下角
-显示供应商余额，点击展开完整计费卡（本会话费用、今日消费、token 三桶占比、
-多供应商列表）。**DeepSeek 优先**，架构上为后续接入其它 API 供应商留好扩展点。
+English | [中文](README.zh.md)
 
-> **English** — A liquid-glass billing overlay for the DeepSeek Harness Web GUI:
-> an always-on capsule showing the provider balance, expanding into a full billing
-> card (session cost, today's spend, token-bucket breakdown, multi-provider list).
-> DeepSeek-first, with an extension point for more API providers.
-> Install: `dsh plugin --profile web add github:linkingoscar/dsh-billing-glass`.
+A billing overlay plugin for the DeepSeek Harness Web GUI: a **liquid-glass** capsule
+pinned to the bottom-right corner showing the provider balance; click to expand a full
+billing card (session cost, daily spend, token-bucket breakdown, provider list).
+**DeepSeek-first**, with an extension point for more API providers.
 
-## 功能
+## Features
 
-- **玻璃胶囊常驻**：状态点 + 供应商名 + 余额，一瞥即得，不用切窗口查余额；
-  点击展开完整卡片，展开卡头部可拖动（位置存 localStorage）。
-- **液态玻璃材质**：`backdrop-filter` 磨砂增艳 + 半透明主题底色 + 镜面高光描边 +
-  折射光斑层 + 柔和悬浮投影；自动跟随 `--dsw-*` 亮/暗主题。
-- **逐条消息费用角标**：每条 assistant 消息动作条上显示当条费用小徽章
-  （悬停见输入/缓存/输出 token 拆分与模型）。
-- **消费账本与统计**：持久化账本（`storages/billing-glass-ledger.json`，
-  幂等、防抖原子写），展开卡显示 今日 / 本月 / 累计 消费统计
-  （USD 汇总后按当前供应商币种换算）。
-- **会话费用**：对每条 `assistant/message` 按官方价格政策（含 2026-08-17 峰谷）
-  计价，按 `request/header` 的 provider 归属分账；持久化日志全量回放（包含安装前
-  的历史）+ 实时账本兜底。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
-- **今日消费**：余额差估算（`期初 − 当前`，日状态落盘）。
-- **定价同步校验（按钮）**：展开卡「套餐」行的 **↻ 校验定价** 按钮，只拉取
-  **当前显示的那家供应商**的官方定价源，验证计费体系是否最新（不批量刷新，
-  避免对多家官网同时请求）：
-  - DeepSeek：拉官方定价页（api-docs.deepseek.com）解析现行价/峰谷表/生效日期，
-    与内置政策链逐项对比 → ✅ 已同步 / ⚠ 发现差异（列明细，页面快照落盘到
-    `storages/billing-glass-pricing-snapshot.html` 供助手分析）/ 无法解析（页面
-    改版，引导对话求助手）。60 秒防抖。
-  - 官方目录供应商（其余 24 家）：提示价格随 Harness 官方目录同步
-    （`scripts/sync-providers.js`），需要立即核对时引导对话求助手。
-- **多供应商自动切换**：卡片自动跟随**当前正在使用的供应商**——
-  会话最近请求的 provider（`request/header`）> Harness 后台配置的现行供应商
-  （设置 → 模型 的 `agent-default-model`）> 注册表第一位（DeepSeek 优先）。
-  展开卡底部的供应商列表可点击手动查看某个供应商，再点一次恢复自动跟随；
-  配置里现行的供应商带「现行」徽章，未配 Key 的带「未配置」标记。
-- **套餐 / 费用体系**：每个供应商声明自己的 `plan`（`token` 按量计费 /
-  `subscription` 订阅套餐），卡片「套餐」行显示计费方式 + 当前计价档
-  （标准价 / 峰时价 / 谷时价）。
+- **Always-on glass capsule**: status dot + provider name + balance at a glance; click
+  to expand. The expanded card's header is draggable (position stored in localStorage).
+- **Liquid-glass material**: `backdrop-filter` frost + translucent theme colors +
+  specular highlight border + refraction sheen layer + soft float shadow; follows the
+  `--dsw-*` light/dark theme automatically.
+- **Per-message cost badge**: each assistant message's action bar shows a small cost
+  chip (hover for the input/cache/output token split and model).
+- **Spend ledger & stats**: a persistent ledger (`storages/billing-glass-ledger.json`,
+  idempotent, debounced atomic writes); the expanded card shows today / this month /
+  all-time totals (aggregated in USD, converted to the current provider's currency).
+- **Session cost**: every `assistant/message` is priced against the official price
+  policy (including the 2026-08-17 peak/valley schedule) and attributed to the provider
+  from the `request/header`; full persistent-log replay (including pre-install history)
+  + live ledger fallback. Hover ⓘ for the `tokens × unit price = subtotal` formula.
+- **Daily spend**: balance-delta estimate (`start-of-day − current`, daily state
+  persisted).
+- **Pricing sync check (button)**: the card's "plan" row has a **↻ verify pricing**
+  button that pulls the official pricing source of **only the currently displayed
+  provider** and compares it against the built-in policy chain → ✅ synced / ⚠ drift
+  found (details listed, page snapshot saved to
+  `storages/billing-glass-pricing-snapshot.html` for the assistant to analyze) /
+  unparseable (page changed; guided back to chat). 60s debounce.
+- **Multi-provider auto-switching**: the card follows **the provider in current use** —
+  the session's latest `request/header` provider > the harness-configured active
+  provider (Settings → Models, `agent-default-model`) > the registry's first entry
+  (DeepSeek-first). Click any provider in the bottom list to inspect it manually, click
+  again to restore auto-follow; the configured active provider carries an "active"
+  badge, providers without a configured key a "not configured" marker.
+- **Plan / fee system**: each provider declares its `plan` (`token` pay-as-you-go /
+  `subscription`); the "plan" row shows the billing mode + the current price tier
+  (standard / peak / valley).
+- **Daily spend (official, optional)**: by default estimated from the balance delta
+  (`≈`). Set `DEEPSEEK_PLATFORM_TOKEN` to switch to official platform data (the exact
+  `consumed` value):
 
-- **今日消费（官方口径可选）**：默认按余额差估算（`≈` 标注）。配置
-  `DEEPSEEK_PLATFORM_TOKEN` 后改用官方平台数据（`已消费` 精确值）：
-
-  1. 登录 https://platform.deepseek.com，打开 DevTools → Console，执行
+  1. Sign in at https://platform.deepseek.com, open DevTools → Console, run
      `JSON.parse(localStorage.getItem('userToken')).value`
-  2. 把结果加入 `~/.dsh/.credentials.yaml`：`DEEPSEEK_PLATFORM_TOKEN: <token>`
-  3. 刷新页面；卡片今日消费自动切换为官方口径。token 过期会提示重新获取。
-  失败时自动回退余额差估算，不会中断显示。
+  2. Add the result to `~/.dsh/.credentials.yaml`:
+     `DEEPSEEK_PLATFORM_TOKEN: <token>`
+  3. Refresh the page; the card's daily spend switches to the official figure. Expired
+     tokens prompt a re-fetch. Failures fall back to the balance-delta estimate — the
+     display never breaks.
 
-## 结构
+## Structure
 
 ```
 dsh-billing-glass/
 ├── README.md
-├── package.json              # dsh.bundle + dsh.client(web) 声明
-├── cordis.patch.yml          # 组合包补丁层
+├── package.json              # dsh.bundle + dsh.client(web) declaration
+├── cordis.patch.yml          # composition patch layer
 └── lib/
-    ├── index.js              # host：聚合路由 /api/billing-glass/state + 事件计费
+    ├── index.js              # host: aggregate route /api/billing-glass/state + event pricing
     ├── providers/
-    │   ├── registry.js       # provider 抽象与注册表（扩展点）
-    │   ├── deepseek.js       # DeepSeek provider（余额/今日消费/计价）
-    │   └── deepseek-pricing.js # DeepSeek 官方价格引擎（政策链 + 峰谷）
-    └── client.js             # 浏览器端：液态玻璃悬浮卡（手写 bundle，无构建）
+    │   ├── registry.js       # provider abstraction & registry (extension point)
+    │   ├── deepseek.js       # DeepSeek provider (balance/daily spend/pricing)
+    │   └── deepseek-pricing.js # DeepSeek official price engine (policy chain + peak/valley)
+    └── client.js             # browser: liquid-glass overlay card (hand-written bundle, no build)
 ```
 
-## 安装
+## Installation
 
-从 GitHub 安装（推荐）：
+From GitHub (recommended):
 
 ```sh
 dsh plugin --profile web add github:linkingoscar/dsh-billing-glass
 ```
 
-本地 checkout（开发用）：
+Local checkout (development):
 
 ```sh
 dsh plugin --profile web add link:$(pwd)
 ```
 
-然后重启 `dsh web` 并刷新页面。要求 Harness 支持 `dsh plugin` 命令，且已在
-**设置 → 模型** 配置 `DEEPSEEK_API_KEY`（余额查询复用这把 Key，不出本机）。
+Then restart `dsh web` and refresh the page. Requires a harness with the `dsh plugin`
+command and a `DEEPSEEK_API_KEY` configured in **Settings → Models** (the balance query
+reuses that key; nothing leaves your machine).
 
-## 接入新的 API 供应商
+## Adding an API provider
 
-**预置范围与 Harness 官方提供方列表完全对齐（无感）：**
+**Built-in scope matches the harness official provider list exactly (no setup):**
 
-- 注册表内置 **25 家供应商**（`lib/providers/catalog.generated.js`），由
-  `scripts/sync-providers.js` 从 Harness 内置的 pi-ai 官方目录自动生成——
-  名称、baseURL、每个模型的官方价格（USD/1M）都与 Harness 模型配置后台
-  的提供方列表一致。在设置 → 模型 里选了谁、会话用了谁，悬浮卡自动切换。
-- 其中 DeepSeek 用专用 provider（峰谷政策链精确计价），Moonshot /
-  OpenRouter 另有公开余额接口适配；其余供应商会话费用计价照常，
-  余额显示「无公开余额接口」。
-- Harness 升级后重跑 `node scripts/sync-providers.js` 即同步最新目录与价格。
+- The registry ships **25 providers** (`lib/providers/catalog.generated.js`), generated
+  by `scripts/sync-providers.js` from the harness's built-in pi-ai official catalog —
+  names, baseURLs and per-model official prices (USD/1M) all match the provider list in
+  the harness model settings. Whichever provider is chosen in Settings → Models or used
+  by a session, the overlay switches automatically.
+- DeepSeek uses a dedicated provider (exact peak/valley policy-chain pricing);
+  Moonshot / OpenRouter additionally have public balance-endpoint adapters; other
+  providers price session cost as usual and show "no public balance endpoint" for the
+  balance.
+- After a harness upgrade, re-run `node scripts/sync-providers.js` to sync the catalog
+  and prices.
 
-**官方列表之外的自定义供应商（优雅降级 + 引导闭环）：**
+**Custom providers outside the official list (graceful degradation + guided loop):**
 
-会话使用了 Harness 官方目录未列举的供应商（baseURL 匹配失败）时，悬浮卡
-出现 ⚠ 引导条：
+When a session uses a provider missing from the harness official catalog (baseURL
+mismatch), the overlay shows a ⚠ guidance strip:
 
-> 未识别的供应商 "xxx"：不在 Harness 官方提供方列表中。请在对话中告诉
-> 助手它的计价方案（单价/套餐）或官方价格页链接，助手会帮你完成配置。
+> Unrecognized provider "xxx": not in the harness official provider list. Tell the
+> assistant its pricing scheme (unit prices/subscription) or its official price page in
+> chat, and the assistant will wire it up.
 
-用户按提示在对话里给出计价方案后，即可用通用工厂
-`defineOpenAiCompatProvider`（`lib/providers/openai-compat.js`）一次性接入，
-之后同样永久自动。
+Once the user gives a pricing scheme in chat, the generic factory
+`defineOpenAiCompatProvider` (`lib/providers/openai-compat.js`) onboards it in one shot —
+permanent and automatic from then on.
 
-1. 新建 `lib/providers/<vendor>.js`，实现 provider 契约（见 `registry.js` 顶部注释）：
+1. Create `lib/providers/<vendor>.js` implementing the provider contract (see the
+   comment at the top of `registry.js`):
 
    ```js
    export const myVendor = {
      id: "my-vendor",
      displayName: "My Vendor",
      currency: "USD",
-     aliases: ["my-vendor-official"],   // Harness provider id 别名（header/配置里出现的名字）
+     aliases: ["my-vendor-official"],   // harness provider-id aliases (names seen in header/config)
      defaultModel: "my-model",
-     keyRef: "MY_VENDOR_API_KEY",       // 凭证引用名（判断是否已配置 Key）
-     plan: { kind: "token", label: "按量计费 · 官方价格" },
-     // 订阅制供应商：
-     // plan: { kind: "subscription", label: "Pro 套餐", fee: 20, currency: "USD", period: "月" },
-     async fetchBalance(ctx) { /* 返回 { total, granted, toppedUp, available, currency } */ },
-     priceAt(model, timeMs) { /* 返回 { cny, usd, mode } 单价 */ },
-     costOf(usage, unit) { /* 返回 { cost, costUsd, ...tokens } */ },
-     async todayConsumed(ctx, config, balance) { /* 可选，返回 number | null */ }
+     keyRef: "MY_VENDOR_API_KEY",       // credential ref (used to detect a configured key)
+     plan: { kind: "token", label: "Pay-as-you-go · official prices" },
+     // subscription providers:
+     // plan: { kind: "subscription", label: "Pro plan", fee: 20, currency: "USD", period: "month" },
+     async fetchBalance(ctx) { /* returns { total, granted, toppedUp, available, currency } */ },
+     priceAt(model, timeMs) { /* returns { cny, usd, mode } unit price */ },
+     costOf(usage, unit) { /* returns { cost, costUsd, ...tokens } */ },
+     async todayConsumed(ctx, config, balance) { /* optional, returns number | null */ }
    };
    ```
 
-2. 在 `registry.js` 的 `PROVIDERS` 数组注册（顺序即悬浮卡展示顺序，DeepSeek 保持第一）。
-3. 在 Harness 设置 → 模型 里选择该供应商/模型，或发起一次使用该供应商的请求——
-   悬浮卡即自动切换显示它的名称、套餐与费用体系。
-4. 重启 `dsh web` 即生效——UI 与聚合路由自动多出一节，无需改动。
+2. Register it in the `PROVIDERS` array in `registry.js` (order = display order;
+   DeepSeek stays first).
+3. Pick the provider/model in harness Settings → Models, or make one request through it
+   — the overlay switches to show its name, plan and fee system automatically.
+4. Restart `dsh web` — the UI and the aggregate route gain a section with no further
+   changes.
 
-## 供应商切换信号（自动感知）
+## Provider-switch signals (auto-detected)
 
-| 信号 | 来源 | 优先级 |
+| Signal | Source | Priority |
 | --- | --- | --- |
-| 会话实际使用的供应商 | `request/header` 事件（provider id 或 pi-ai 网关 baseURL） | 最高 |
-| 后台配置的现行供应商 | `ctx.agentDefaultModel.currentSelection()`（设置 → 模型） | 次之 |
-| 注册表默认（DeepSeek） | `PROVIDERS[0]` | 兜底 |
+| Provider in actual session use | `request/header` events (provider id or pi-ai gateway baseURL) | highest |
+| Configured active provider | `ctx.agentDefaultModel.currentSelection()` (Settings → Models) | next |
+| Registry default (DeepSeek) | `PROVIDERS[0]` | fallback |
 
-供应商 id 通过 `aliases` 归一（如 Harness 里 DeepSeek 的 provider id 是
-`deepseek-official`）；pi-ai 网关按 baseURL hostname 匹配（`baseUrlHosts`，
-如 `api.moonshot.cn` → Moonshot Kimi），未知 baseURL 不误配。
+Provider ids are normalized through `aliases` (e.g. the harness DeepSeek provider id is
+`deepseek-official`); the pi-ai gateway matches by baseURL hostname (`baseUrlHosts`,
+e.g. `api.moonshot.cn` → Moonshot Kimi); unknown baseURLs are never mis-assigned.
 
-## 验证
+## Verification
 
 ```sh
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/providers/*.js
-dsh --profile web --dump-config        # 组合树校验（bundle 行出现）
-# 真机：重启 dsh web，页面右下角出现玻璃胶囊
+dsh --profile web --dump-config        # composition tree check (the bundle row appears)
+# on-device: restart dsh web; the glass capsule appears in the bottom-right corner
 ```
 
 ## License
 
 [Apache-2.0](LICENSE) © 2026 [linkingoscar](https://github.com/linkingoscar)
 
-定价引擎移植自 [bpc-oss/dsh-web-billing](https://github.com/bpc-oss/dsh-web-billing)
-（MIT 许可），其版权声明按 MIT 要求保留在
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+The pricing engine was ported from
+[bpc-oss/dsh-web-billing](https://github.com/bpc-oss/dsh-web-billing) (MIT license);
+its copyright notice is retained in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) as required by the MIT terms.
