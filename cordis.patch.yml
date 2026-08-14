@@ -1,0 +1,7 @@
+# dsh-billing-glass — 液态玻璃计费悬浮卡。
+# Host half registers GET /api/billing-glass/state and prices session events;
+# the package also declares a dsh.client web bundle that paints the
+# bottom-right liquid-glass overlay card (shell.overlay slot).
+- insert:
+    - id: billing-glass
+      name: dsh-billing-glass

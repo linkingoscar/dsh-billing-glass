@@ -1,0 +1,46 @@
+{
+  "name": "dsh-billing-glass",
+  "version": "0.1.0",
+  "description": "液态玻璃材质的 API 计费悬浮卡（DeepSeek Harness Web GUI）：多供应商余额/会话费用/今日消费，DeepSeek 优先，供应商可扩展。",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "slots"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linkingoscar/dsh-billing-glass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linkingoscar/dsh-billing-glass/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "billing",
+    "balance",
+    "glassmorphism",
+    "liquid-glass",
+    "web"
+  ],
+  "license": "Apache-2.0"
+}

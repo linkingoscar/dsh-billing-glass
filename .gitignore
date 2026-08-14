@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs / temporary
+dist/
+build/
+temp/
+
+# 运行时账本/快照（写往 Harness profile 的 storages/，不落本仓库）
+storages/
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
