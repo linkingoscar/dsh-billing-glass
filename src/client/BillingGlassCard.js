@@ -383,7 +383,8 @@ import { refreshLedger } from "./message-store.js";
 					? session.cost
 					: (Number.isFinite(session?.costUsd) ? session.costUsd * (sessionCurrency === "CNY" ? 7.2 : 1) : 0);
 			const breakdown = session && Array.isArray(session.breakdown) ? session.breakdown.filter((b) => b && typeof b === "object" && b.tokens > 0) : [];
-			const today = primary && primary.today ? primary.today : null;
+			// 只展示官方口径；旧 host 若返回 estimate 也直接隐藏，避免余额差估算误导。
+			const today = primary && primary.today && primary.today.source === "official" ? primary.today : null;
 
 			// 供应商列表：默认只显示"相关"的（当前显示 / 已配 Key / 有余额 / 后台现行），
 			// 其余官方目录供应商折叠进一行，避免展开卡过长。
