@@ -75,6 +75,31 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
      figure. Expired tokens or API failures hide the row rather than falling back to a
      misleading balance-delta estimate.
 
+## Known limitations
+
+- **"Daily spend" is official-only**: the row is hidden unless
+  `DEEPSEEK_PLATFORM_TOKEN` is configured. A balance-delta estimate is no longer
+  displayed because top-ups/refunds make it unreliable.
+- **Session cost and spend stats are locally computed, not a provider invoice**: they
+  are priced from the plugin's built-in official price tables and message tokens, and
+  may differ slightly from the final platform bill (pricing moment, rounding,
+  peak/valley interpretation).
+- **Spend stats only cover messages the plugin has seen**: the current session can be
+  replayed from the persistent session log (including pre-install history), but other
+  historical sessions that the plugin never processed are not in the local ledger.
+- **Unknown models fail closed**: a model missing from the catalog is marked unpriced
+  rather than priced at zero, so displayed totals may understate the real bill; re-run
+  `scripts/sync-providers.js` or provide a pricing scheme to close the gap.
+- **Some providers have no public balance endpoint**: their balance shows "—", though
+  session cost is still priced from the catalog.
+- **The price catalog can lag**: non-DeepSeek prices come from the harness built-in
+  pi-ai catalog snapshot; re-run `scripts/sync-providers.js` after harness upgrades.
+  DeepSeek can be checked on demand with the "verify pricing" button.
+- **The model series tag is a display heuristic**: brand-new model names may show no
+  tag or a generic one; it never affects pricing.
+- **Balance freshness has latency**: DeepSeek balances refresh at most every 10s (other
+  providers 60s), and the provider's own balance settlement may lag further.
+
 ## Structure
 
 ```
