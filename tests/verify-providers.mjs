@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { matchProvider, PROVIDERS } from "../lib/providers/registry.js";
-import { PI_AI_CATALOG_META } from "../lib/providers/openai-compat.js";
+import { PI_AI_CATALOG_META, defineOpenAiCompatProvider } from "../lib/providers/openai-compat.js";
 
 test("注册表 = DeepSeek 专用 + 官方目录预置供应商（对齐 Harness 提供方列表）", () => {
   const ids = PROVIDERS.map((p) => p.id);
@@ -66,6 +66,31 @@ test("未知模型 fail closed：返回 null，绝不按 0 元计费", () => {
   assert.equal(provider.priceAt("kimi-k2-turbo-preview", Date.now()) !== null, true);
 });
 
+test("带 / 的合法 catalog model id：exact 命中不被 basename strip 破坏", () => {
+  const baseten = PROVIDERS.find((p) => p.id === "baseten");
+  assert.ok(baseten, "baseten provider 存在");
+  assert.ok(baseten.priceAt("deepseek-ai/DeepSeek-V4-Pro", Date.now()) !== null, "完整 catalog id 应命中");
+  assert.ok(baseten.priceAt("DEEPSEEK-AI/deepseek-v4-pro", Date.now()) !== null, "完整 id 大小写不敏感命中");
+  assert.ok(baseten.priceAt("moonshotai/Kimi-K3", Date.now()) !== null, "另一个带 / 的 catalog id 应命中");
+});
+
+test("basename alias 只在唯一匹配时使用；歧义 fail closed", () => {
+  const provider = defineOpenAiCompatProvider({
+    id: "ambiguity-test",
+    displayName: "Ambiguity Test",
+    baseUrl: "https://ambiguity.example/v1",
+    baseUrlHosts: ["ambiguity.example"],
+    prices: {
+      "foo/model-x": { input: 1, cacheRead: 0.1, output: 2 },
+      "bar/model-x": { input: 3, cacheRead: 0.3, output: 6 }
+    },
+    planLabel: "test"
+  });
+  assert.ok(provider.priceAt("foo/model-x", Date.now()) !== null, "exact 完整 id 命中");
+  assert.ok(provider.priceAt("FOO/MODEL-X", Date.now()) !== null, "大小写不敏感 exact 命中");
+  assert.equal(provider.priceAt("model-x", Date.now()), null, "裸 basename 有歧义，必须 fail closed");
+});
+
 test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 不抛错", async () => {
   const withBalance = matchProvider("pi-ai", "https://openrouter.ai/api/v1");
   assert.equal(withBalance.keyRef, "OPENROUTER_API_KEY");
@@ -74,7 +99,7 @@ test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 
 });
 
 test("目录血缘元数据必须真实：version/hash/generatedAt 禁止为 null", () => {
-  assert.equal(PI_AI_CATALOG_META.source, "@earendil-works/pi-ai dist/providers/data");
+  assert.equal(PI_AI_CATALOG_META.source, "@earendil-works/pi-ai dist/providers/data + dist/providers/<id>.js");
   assert.equal(PI_AI_CATALOG_META.generator, "scripts/sync-providers.js");
   assert.ok(typeof PI_AI_CATALOG_META.sourceVersion === "string" && PI_AI_CATALOG_META.sourceVersion !== "", "sourceVersion 必须记录真实版本");
   assert.match(PI_AI_CATALOG_META.sourceSha256, /^[a-f0-9]{64}$/, "sourceSha256 必须是 64 位 hex");
