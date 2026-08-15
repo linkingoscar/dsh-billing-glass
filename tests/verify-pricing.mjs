@@ -49,12 +49,10 @@ test("priceAt：2026-05-22 政策（75% 降价转永久）", () => {
   assert.equal(unit.cny.output, 2);
 });
 
-test("priceAt：deepseek-chat 退役后不再无限继承旧政策", () => {
-  const before = priceAt("deepseek-chat", beijing(2025, 8, 1));
-  assert.equal(before.mode, "flat");
-  assert.equal(before.cny.input, 2);
-  assert.equal(priceAt("deepseek-chat", beijing(2025, 10, 1)), null, "2025-09-06 后未审计区间不猜测");
-  assert.equal(priceAt("deepseek-chat", beijing(2026, 3, 1)), null, "退役前但 alias 政策未生效时不猜测");
+test("priceAt：2025 历史政策已删除，未审计区间一律未计价", () => {
+  assert.equal(priceAt("deepseek-chat", beijing(2025, 8, 1)), null, "2025 夜间/调价历史未审计，不猜测");
+  assert.equal(priceAt("deepseek-reasoner", beijing(2025, 8, 1)), null);
+  assert.equal(priceAt("deepseek-chat", beijing(2026, 3, 1)), null, "alias 政策未生效前不猜测");
   assert.equal(priceAt("deepseek-chat", beijing(2026, 9, 1, 22)), null, "2026-07-24 退役后必须未计价");
 });
 

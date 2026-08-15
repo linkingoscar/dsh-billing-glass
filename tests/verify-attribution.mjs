@@ -2,7 +2,7 @@
 // source/header 冲突、source 缺 model、模型全缺都 fail closed。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveMessageContext, priceEventInto, emptyCostRecord } from "../lib/index.js";
+import { resolveMessageContext, priceEventInto, upsertMessageSample, emptyCostRecord } from "../lib/index.js";
 import { deepseek } from "../lib/providers/deepseek.js";
 
 test("source/header 冲突：header provider/model 优先", () => {
@@ -44,5 +44,22 @@ test("header/source 都没有 model：model_unknown 未计价，绝不 fallback 
   }, deepseek, context);
   assert.equal(sample.priced, false);
   assert.equal(sample.unpricedReason, "model_unknown");
+  upsertMessageSample(record, "m1", sample);
   assert.equal(record.unpricedCalls, 1);
+});
+
+test("同一 messageId 重复 upsert：整个 pipeline 幂等，不重复累计", () => {
+  const context = { provider: deepseek, model: "deepseek-v4-flash" };
+  const event = {
+    type: "assistant/message",
+    time: Date.parse("2026-08-20T20:00:00+08:00"),
+    data: { message: { id: "dup" }, usage: { inputTokens: 1_000_000, cacheReadTokens: 0, outputTokens: 0 } }
+  };
+  const record = emptyCostRecord();
+  const sample = priceEventInto(record, event, deepseek, context);
+  upsertMessageSample(record, "dup", sample);
+  upsertMessageSample(record, "dup", sample);
+  assert.equal(record.calls, 1, "同一 messageId 只算一次");
+  assert.equal(record.inputTokens, 1_000_000);
+  assert.ok(Math.abs(record.costNative - sample.costNative) < 1e-9);
 });

@@ -4,10 +4,10 @@ import { currencySymbol, formatMoney, formatTokens } from "./format.js";
 import { subscribeMessageStore, readMessageCost } from "./message-store.js";
 
 export function MessageCostChip({ messageId, sessionId }) {
-	if (typeof messageId !== "string" || typeof sessionId !== "string") return null;
-	// external-store subscription：Map mutation 不会触发 React，这里显式订阅。
+	// Hooks 必须在任何 early return 之前调用（React Hooks 规则）。
 	const [, setTick] = useState(0);
 	useEffect(() => subscribeMessageStore(() => setTick((t) => t + 1)), []);
+	if (typeof messageId !== "string" || typeof sessionId !== "string") return null;
 	const record = readMessageCost(sessionId, messageId);
 	if (record === void 0) return null;
 	const unpriced = record.priced === false;
