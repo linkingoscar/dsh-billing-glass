@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { matchProvider, PROVIDERS } from "../lib/providers/registry.js";
+import { PI_AI_CATALOG_META } from "../lib/providers/openai-compat.js";
 
 test("注册表 = DeepSeek 专用 + 官方目录预置供应商（对齐 Harness 提供方列表）", () => {
   const ids = PROVIDERS.map((p) => p.id);
@@ -45,14 +46,24 @@ test("预置供应商有完整契约（计价、套餐；余额按适配器可�
   }
 });
 
-test("官方目录计价：USD 目录价双币种换算", () => {
-  const provider = matchProvider("pi-ai", "https://api.moonshot.cn/v1");
-  assert.equal(provider.id, "moonshotai-cn");
-  const unit = provider.priceAt("kimi-k2-turbo-preview", Date.now());
+test("官方目录计价：USD 供应商 costNative === costUsd === 目录价", () => {
+  const provider = matchProvider("pi-ai", "https://api.x.ai/v1");
+  assert.equal(provider.id, "xai");
+  assert.equal(provider.currency, "USD");
+  const unit = provider.priceAt("grok-4.3", Date.now());
   assert.equal(unit.mode, "flat");
-  assert.equal(unit.usd.input, 2.4); // 目录价（USD/1M）
+  const catalogInput = unit.usd.input;
+  assert.ok(catalogInput > 0, "目录价应大于 0");
   const result = provider.costOf({ inputTokens: 1_000_000, outputTokens: 0 }, unit);
-  assert.ok(Math.abs(result.costUsd - 2.4) < 1e-9);
+  assert.ok(Math.abs(result.costNative - catalogInput) < 1e-9, "costNative 应为 USD 目录价，而不是 7.2 汇率换算后的 CNY");
+  assert.ok(Math.abs(result.costUsd - catalogInput) < 1e-9);
+  assert.equal(result.nativeCurrency, "USD");
+});
+
+test("未知模型 fail closed：返回 null，绝不按 0 元计费", () => {
+  const provider = matchProvider("pi-ai", "https://api.moonshot.cn/v1");
+  assert.equal(provider.priceAt("brand-new-model-not-in-catalog", Date.now()), null);
+  assert.equal(provider.priceAt("kimi-k2-turbo-preview", Date.now()) !== null, true);
 });
 
 test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 不抛错", async () => {
@@ -60,4 +71,12 @@ test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 
   assert.equal(withBalance.keyRef, "OPENROUTER_API_KEY");
   const noBalance = matchProvider("pi-ai", "https://api.x.ai/v1");
   assert.equal(await noBalance.fetchBalance({}), null, "无公开余额接口的供应商返回 null");
+});
+
+test("目录血缘元数据存在：source/version/hash/generatedAt/generator 字段齐备", () => {
+  assert.equal(PI_AI_CATALOG_META.source, "@earendil-works/pi-ai dist/providers/data");
+  assert.equal(PI_AI_CATALOG_META.generator, "scripts/sync-providers.js");
+  assert.ok("sourceVersion" in PI_AI_CATALOG_META);
+  assert.ok("sourceSha256" in PI_AI_CATALOG_META);
+  assert.ok("generatedAt" in PI_AI_CATALOG_META);
 });

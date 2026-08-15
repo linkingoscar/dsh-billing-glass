@@ -26,12 +26,17 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 - **型号代称 tag**：胶囊与展开卡显示当前模型的短标签——DeepSeek
   Pro/Flash、Moonshot K2.5/K3、GPT 5.6-Sol/5.6-Terra/5.6-Luna、Claude
   Opus-4、Gemini 2.5-Pro、Qwen 3.7-Max、GLM 5.2 等；长标签自动省略，不撑卡。
-- **消费账本与统计**：持久化账本（`storages/billing-glass-ledger.json`，
-  幂等、防抖原子写），展开卡显示 今日 / 本月 / 累计 消费统计
-  （USD 汇总后按当前供应商币种换算）。
+- **消费账本与统计**：append-only JSONL 账本
+  （`storages/billing-glass-ledger.jsonl`，幂等、防抖追加、定期压缩；
+  旧版 `billing-glass-ledger.json` 自动迁移），展开卡显示 今日 / 本月 / 累计
+  消费统计。金额以 `costUsd` 为聚合基准，展示层按 `costNative + nativeCurrency`
+  显示，不再用含义模糊的单字段 `cost`。
 - **会话费用**：对每条 `assistant/message` 按官方价格政策（含 2026-08-17 峰谷）
   计价，按 `request/header` 的 provider 归属分账；持久化日志全量回放（包含安装前
   的历史）+ 实时账本兜底。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
+- **未知模型 fail closed**：目录里没有的模型（catalog 落后、alias 改名、新模型）
+  不会被静默按 0 元计费——该条消息标记「未计价」，卡片与消费统计显示
+  `未计价 N`，账本记录 `priced: false`。
 - **今日消费**：余额差估算（`期初 − 当前`，日状态落盘）。
 - **定价同步校验（按钮）**：展开卡「套餐」行的 **↻ 校验定价** 按钮，只拉取
   **当前显示的那家供应商**的官方定价源，验证计费体系是否最新（不批量刷新，
@@ -67,13 +72,19 @@ dsh-billing-glass/
 ├── README.md
 ├── package.json              # dsh.bundle + dsh.client(web) 声明
 ├── cordis.patch.yml          # 组合包补丁层
+├── scripts/
+│   ├── build-client.js       # src/client/* → lib/client.js（用户仍无构建安装）
+│   └── sync-providers.js     # pi-ai 官方目录同步 + 数据血缘记录
+├── src/client/               # 浏览器端维护源码（模块化：组件/格式/型号 tag/材质）
 └── lib/
     ├── index.js              # host：聚合路由 /api/billing-glass/state + 事件计费
-    ├── providers/
-    │   ├── registry.js       # provider 抽象与注册表（扩展点）
-    │   ├── deepseek.js       # DeepSeek provider（余额/今日消费/计价）
-    │   └── deepseek-pricing.js # DeepSeek 官方价格引擎（政策链 + 峰谷）
-    └── client.js             # 浏览器端：液态玻璃悬浮卡（手写 bundle，无构建）
+    ├── ledger.js             # append-only JSONL 消费账本
+    ├── client.js             # 构建产物（不要手改，改 src/client 后跑 build）
+    └── providers/
+        ├── registry.js       # provider 抽象与注册表（扩展点）
+        ├── deepseek.js       # DeepSeek provider（余额/今日消费/计价）
+        ├── deepseek-pricing.js # DeepSeek 官方价格引擎（政策链 + 峰谷）
+        └── catalog.generated.js # pi-ai 目录快照 + PI_AI_CATALOG_META 血缘
 ```
 
 ## 安装
@@ -105,6 +116,9 @@ dsh plugin --profile web add link:$(pwd)
   OpenRouter 另有公开余额接口适配；其余供应商会话费用计价照常，
   余额显示「无公开余额接口」。
 - Harness 升级后重跑 `node scripts/sync-providers.js` 即同步最新目录与价格。
+- 数据血缘可审计：`catalog.generated.js` 同时导出 `PI_AI_CATALOG_META`
+  （source / sourceVersion / sourceSha256 / generatedAt），由 sync 脚本自动写入。
+  历史快照未记录版本时这些字段为 `null`，重跑脚本后即补齐。
 
 **官方列表之外的自定义供应商（优雅降级 + 引导闭环）：**
 
@@ -132,8 +146,10 @@ dsh plugin --profile web add link:$(pwd)
      // 订阅制供应商：
      // plan: { kind: "subscription", label: "Pro 套餐", fee: 20, currency: "USD", period: "月" },
      async fetchBalance(ctx) { /* 返回 { total, granted, toppedUp, available, currency } */ },
-     priceAt(model, timeMs) { /* 返回 { cny, usd, mode } 单价 */ },
-     costOf(usage, unit) { /* 返回 { cost, costUsd, ...tokens } */ },
+     // 模型无价且无 `*` 兜底时必须返回 null（fail closed）
+     priceAt(model, timeMs) { /* 返回 { cny, usd, mode } 单价，或 null */ },
+     // costNative 是供应商原生币种金额，costUsd 是聚合基准
+     costOf(usage, unit) { /* 返回 { costNative, nativeCurrency, costUsd, ...tokens } */ },
      async todayConsumed(ctx, config, balance) { /* 可选，返回 number | null */ }
    };
    ```
@@ -158,6 +174,8 @@ dsh plugin --profile web add link:$(pwd)
 ## 验证
 
 ```sh
+node scripts/build-client.js          # 从 src/client/* 重建 lib/client.js
+git diff --exit-code lib/client.js    # 确认提交的 bundle 与源码一致
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/providers/*.js

@@ -1,7 +1,7 @@
 // 消费账本验证：幂等记录、会话查询、今日/本月/累计聚合。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createLedger } from "../lib/ledger.js";
@@ -17,10 +17,11 @@ function entry(over = {}) {
     messageId: "m1",
     providerId: "deepseek",
     model: "deepseek-v4-pro",
-    currency: "CNY",
+    nativeCurrency: "CNY",
     time: Date.parse("2026-08-14T10:00:00+08:00"),
-    cost: 1.5,
+    costNative: 1.5,
     costUsd: 0.21,
+    priced: true,
     inputTokens: 1000,
     cacheReadTokens: 2000,
     outputTokens: 500,
@@ -31,10 +32,10 @@ function entry(over = {}) {
 test("record 幂等：同 sessionId+messageId 覆盖不重复", () => {
   const { ledger } = makeLedger();
   ledger.record(entry());
-  ledger.record(entry({ cost: 2.5, costUsd: 0.35 }));
+  ledger.record(entry({ costNative: 2.5, costUsd: 0.35 }));
   const messages = ledger.querySession("s1");
   assert.equal(messages.length, 1);
-  assert.equal(messages[0].cost, 2.5);
+  assert.equal(messages[0].costNative, 2.5);
 });
 
 test("querySession 按时间升序，queryMessage 单条查询", () => {
@@ -43,7 +44,7 @@ test("querySession 按时间升序，queryMessage 单条查询", () => {
   ledger.record(entry({ messageId: "m1", time: Date.parse("2026-08-14T10:00:00+08:00") }));
   const messages = ledger.querySession("s1");
   assert.deepEqual(messages.map((m) => m.messageId), ["m1", "m2"]);
-  assert.equal(ledger.queryMessage("s1", "m2").cost, 1.5);
+  assert.equal(ledger.queryMessage("s1", "m2").costNative, 1.5);
   assert.equal(ledger.queryMessage("s1", "nope"), null);
 });
 
@@ -69,16 +70,45 @@ test("summary 今日/本月/累计聚合（USD）", () => {
   assert.equal(s.total.inputTokens, 4000);
 });
 
-test("持久化：flushSync 落盘，重新加载可恢复", () => {
+test("持久化：append-only JSONL 落盘，重新加载可恢复", () => {
   const { dir, ledger } = makeLedger();
   ledger.record(entry());
   ledger.flushSync();
-  const file = join(dir, "billing-glass-ledger.json");
+  const file = join(dir, "billing-glass-ledger.jsonl");
   assert.ok(existsSync(file));
+  const lines = readFileSync(file, "utf8").trim().split("\n");
+  assert.equal(lines.length, 1, "每次 flush 只追加新行，不整文件重写");
   const reloaded = createLedger({}, { storagesDir: dir });
-  assert.equal(reloaded.queryMessage("s1", "m1").cost, 1.5);
-  const raw = JSON.parse(readFileSync(file, "utf8"));
-  assert.equal(raw.version, 1);
-  assert.equal(raw.records.length, 1);
+  assert.equal(reloaded.queryMessage("s1", "m1").costNative, 1.5);
+  assert.equal(reloaded.queryMessage("s1", "m1").nativeCurrency, "CNY");
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("旧版 billing-glass-ledger.json 自动迁移为原生币种语义", () => {
+  const dir = mkdtempSync(join(tmpdir(), "billing-glass-ledger-legacy-"));
+  const legacy = {
+    version: 1,
+    records: [{
+      sessionId: "s1", messageId: "m1", providerId: "deepseek", model: "deepseek-v4-pro",
+      currency: "CNY", time: Date.now(), cost: 1.5, costUsd: 0.21,
+      inputTokens: 1000, cacheReadTokens: 2000, outputTokens: 500
+    }]
+  };
+  writeFileSync(join(dir, "billing-glass-ledger.json"), JSON.stringify(legacy), "utf8");
+  const ledger = createLedger({}, { storagesDir: dir });
+  const migrated = ledger.queryMessage("s1", "m1");
+  assert.equal(migrated.costNative, 1.5);
+  assert.equal(migrated.nativeCurrency, "CNY");
+  assert.equal(migrated.priced, true);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("summary 暴露未计价条数（fail closed 记录）", () => {
+  const { ledger } = makeLedger();
+  ledger.record(entry());
+  ledger.record(entry({ messageId: "unpriced", priced: false, unpricedReason: "pricing_unknown", costNative: 0, costUsd: 0 }));
+  const s = ledger.summary(new Date("2026-08-14T20:00:00+08:00"));
+  assert.equal(s.today.calls, 2);
+  assert.equal(s.today.unpricedCalls, 1);
+  assert.ok(Math.abs(s.today.costUsd - 0.21) < 1e-9, "未计价消息不得计入金额");
 });

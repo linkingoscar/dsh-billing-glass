@@ -6,6 +6,8 @@
   "main": "lib/index.js",
   "files": [
     "lib",
+    "src",
+    "scripts",
     "cordis.patch.yml",
     "README.md",
     "NOTICE",
@@ -26,6 +28,9 @@
         "slots"
       ]
     }
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.84.2"
   },
   "repository": {
     "type": "git",

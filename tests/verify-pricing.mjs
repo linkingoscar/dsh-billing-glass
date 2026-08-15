@@ -63,10 +63,15 @@ test("priceAt：未知模型走 * 兜底（最新政策）", () => {
   assert.equal(unit.cny.input, 1.5);
 });
 
-test("costOf：按双币种计价", () => {
+test("costOf：原生币种与 USD 分开，不再返回模糊 cost", () => {
   const unit = { cny: { input: 1, cacheRead: 0.02, output: 2 }, usd: { input: 0.14, cacheRead: 0.0028, output: 0.28 } };
   const usage = { inputTokens: 1_000_000, cacheReadTokens: 2_000_000, outputTokens: 500_000 };
-  const result = costOf(usage, unit);
-  assert.equal(result.cost, 1 + 2 * 0.02 + 0.5 * 2); // 1 + 0.04 + 1 = 2.04
-  assert.ok(Math.abs(result.costUsd - (0.14 + 2 * 0.0028 + 0.5 * 0.28)) < 1e-9);
+  const cny = costOf(usage, unit, "CNY");
+  assert.equal(cny.costNative, 1 + 2 * 0.02 + 0.5 * 2); // 1 + 0.04 + 1 = 2.04
+  assert.equal(cny.nativeCurrency, "CNY");
+  assert.ok(Math.abs(cny.costUsd - (0.14 + 2 * 0.0028 + 0.5 * 0.28)) < 1e-9);
+  assert.equal(cny.cost, undefined, "cost 模糊字段已取消");
+  const usd = costOf(usage, unit, "USD");
+  assert.ok(Math.abs(usd.costNative - usd.costUsd) < 1e-9, "USD 供应商 costNative === costUsd");
+  assert.equal(usd.nativeCurrency, "USD");
 });

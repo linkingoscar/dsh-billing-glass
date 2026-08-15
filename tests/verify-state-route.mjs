@@ -121,6 +121,28 @@ test("state 路由：force=1&providerId 绕过 DeepSeek 余额缓存", async () 
   assert.equal(body.providers.find((p) => p.id === "deepseek").balance.total, 88, "刷新后拿到新余额");
 });
 
+test("state 路由：未知模型 fail closed，计入 unpricedCalls 而不是 0 元", async () => {
+  sessionHandler({ id: "s1" }, {
+    type: "request/header",
+    time: Date.now(),
+    data: { header: { config: { provider: "xai", model: "brand-new-model" } } }
+  });
+  sessionHandler({ id: "s1" }, {
+    type: "assistant/message",
+    time: Date.now(),
+    data: {
+      message: { id: "m3", source: { provider: "xai", model: "brand-new-model" } },
+      usage: { inputTokens: 1000, cacheReadTokens: 0, outputTokens: 100 }
+    }
+  });
+  const { body } = await request("/api/billing-glass/state?sessionId=s1&force=1&providerId=deepseek");
+  const xai = body.providers.find((p) => p.id === "xai");
+  assert.ok(xai, "xai provider 行存在");
+  assert.equal(xai.session.unpricedCalls, 1);
+  assert.equal(xai.session.costNative, 0);
+  assert.equal(xai.session.costUsd, 0);
+});
+
 test("state 路由：未传 sessionId 时回退后台配置供应商", async () => {
   const { body } = await request("/api/billing-glass/state");
   assert.equal(body.activeProvider, null);

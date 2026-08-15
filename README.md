@@ -31,13 +31,20 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   DeepSeek Pro/Flash, Moonshot K2.5/K3, GPT 5.6-Sol/5.6-Terra/5.6-Luna, Claude
   Opus-4, Gemini 2.5-Pro, Qwen 3.7-Max, GLM 5.2; long tags ellipsize instead of
   stretching the card.
-- **Spend ledger & stats**: a persistent ledger (`storages/billing-glass-ledger.json`,
-  idempotent, debounced atomic writes); the expanded card shows today / this month /
-  all-time totals (aggregated in USD, converted to the current provider's currency).
+- **Spend ledger & stats**: an append-only JSONL ledger
+  (`storages/billing-glass-ledger.jsonl`, idempotent, debounced appends, periodic
+  compaction; the legacy `billing-glass-ledger.json` is migrated automatically); the
+  expanded card shows today / this month / all-time totals. `costUsd` is the only
+  aggregation base; display uses `costNative + nativeCurrency` — the ambiguous single
+  `cost` field is gone.
 - **Session cost**: every `assistant/message` is priced against the official price
   policy (including the 2026-08-17 peak/valley schedule) and attributed to the provider
   from the `request/header`; full persistent-log replay (including pre-install history)
   + live ledger fallback. Hover ⓘ for the `tokens × unit price = subtotal` formula.
+- **Unknown models fail closed**: a model missing from the catalog (catalog lag, alias
+  rename, brand-new model) is never silently priced at zero — the message is marked
+  unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
+  `priced: false`.
 - **Daily spend**: balance-delta estimate (`start-of-day − current`, daily state
   persisted).
 - **Pricing sync check (button)**: the card's "plan" row has a **↻ verify pricing**
@@ -74,13 +81,19 @@ dsh-billing-glass/
 ├── README.md
 ├── package.json              # dsh.bundle + dsh.client(web) declaration
 ├── cordis.patch.yml          # composition patch layer
+├── scripts/
+│   ├── build-client.js       # src/client/* → lib/client.js (install still needs no build)
+│   └── sync-providers.js     # pi-ai catalog sync + provenance recording
+├── src/client/               # maintainable browser source (component/format/model-badge/materials)
 └── lib/
     ├── index.js              # host: aggregate route /api/billing-glass/state + event pricing
-    ├── providers/
-    │   ├── registry.js       # provider abstraction & registry (extension point)
-    │   ├── deepseek.js       # DeepSeek provider (balance/daily spend/pricing)
-    │   └── deepseek-pricing.js # DeepSeek official price engine (policy chain + peak/valley)
-    └── client.js             # browser: liquid-glass overlay card (hand-written bundle, no build)
+    ├── ledger.js             # append-only JSONL spend ledger
+    ├── client.js             # build artifact (edit src/client, then run the build)
+    └── providers/
+        ├── registry.js       # provider abstraction & registry (extension point)
+        ├── deepseek.js       # DeepSeek provider (balance/daily spend/pricing)
+        ├── deepseek-pricing.js # DeepSeek official price engine (policy chain + peak/valley)
+        └── catalog.generated.js # pi-ai snapshot + PI_AI_CATALOG_META provenance
 ```
 
 ## Installation
@@ -116,6 +129,10 @@ reuses that key; nothing leaves your machine).
   balance.
 - After a harness upgrade, re-run `node scripts/sync-providers.js` to sync the catalog
   and prices.
+- Catalog provenance is auditable: `catalog.generated.js` exports
+  `PI_AI_CATALOG_META` (source / sourceVersion / sourceSha256 / generatedAt), written
+  automatically by the sync script. Older snapshots may carry `null` values until the
+  next sync run.
 
 **Custom providers outside the official list (graceful degradation + guided loop):**
 
@@ -145,8 +162,10 @@ permanent and automatic from then on.
      // subscription providers:
      // plan: { kind: "subscription", label: "Pro plan", fee: 20, currency: "USD", period: "month" },
      async fetchBalance(ctx) { /* returns { total, granted, toppedUp, available, currency } */ },
-     priceAt(model, timeMs) { /* returns { cny, usd, mode } unit price */ },
-     costOf(usage, unit) { /* returns { cost, costUsd, ...tokens } */ },
+     // must return null when the model is unknown and no `*` fallback exists (fail closed)
+     priceAt(model, timeMs) { /* returns { cny, usd, mode } unit price, or null */ },
+     // costNative is the provider-native amount; costUsd is the aggregation base
+     costOf(usage, unit) { /* returns { costNative, nativeCurrency, costUsd, ...tokens } */ },
      async todayConsumed(ctx, config, balance) { /* optional, returns number | null */ }
    };
    ```
@@ -173,6 +192,8 @@ e.g. `api.moonshot.cn` → Moonshot Kimi); unknown baseURLs are never mis-assign
 ## Verification
 
 ```sh
+node scripts/build-client.js          # rebuild lib/client.js from src/client/*
+git diff --exit-code lib/client.js    # confirm the committed bundle matches the source
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/providers/*.js
