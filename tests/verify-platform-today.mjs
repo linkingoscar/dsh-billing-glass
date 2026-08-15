@@ -1,7 +1,7 @@
 // 平台用量接口解析验证（官方今日消费）。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parsePlatformTodayCost } from "../lib/providers/deepseek.js";
+import { parsePlatformTodayCost, localDate } from "../lib/providers/deepseek.js";
 
 const TODAY = "2026-08-14";
 
@@ -31,6 +31,12 @@ test("今天无行 → null（调用方回退余额差估算）", () => {
 test("结构不符 → null 或明确报错（调用方回退余额差估算）", () => {
   assert.equal(parsePlatformTodayCost({ code: 0, data: { biz_code: 0, biz_data: {} } }, TODAY), null);
   assert.throws(() => parsePlatformTodayCost(null, TODAY), /平台用量接口错误/);
+});
+
+test("localDate 按账务时区计算，不依赖 host 时区", () => {
+  const epoch = new Date("2026-08-15T17:00:00Z");
+  assert.equal(localDate(epoch, "America/New_York"), "2026-08-15");
+  assert.equal(localDate(epoch, "Asia/Shanghai"), "2026-08-16");
 });
 
 test("业务错误码 → throw（token 过期给出明确提示）", () => {

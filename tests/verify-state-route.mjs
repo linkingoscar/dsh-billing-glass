@@ -108,6 +108,7 @@ test("state 路由：sessionId 驱动会话费用与活跃供应商，DeepSeek �
   assert.ok(deepseek, "DeepSeek provider 行存在");
   assert.equal(deepseek.balance.total, 100);
   assert.ok(deepseek.session !== null, "会话费用存在");
+  assert.equal(deepseek.session.calls, 2, "replay m1 + live m2 去重后 union 为两条");
   assert.ok(deepseek.session.costUsd > 0, "会话费用 USD > 0");
   assert.ok(deepseek.session.costNative > 0, "会话费用原生币种 > 0");
   assert.equal(deepseek.session.nativeCurrency, "CNY");

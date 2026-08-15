@@ -125,6 +125,30 @@ test("损坏 JSONL：坏行计数、尾部残行恢复并重写修复", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("最后一条 JSON 完整但缺末尾换行：保留，不当作损坏", () => {
+  const dir = mkdtempSync(join(tmpdir(), "billing-glass-ledger-tail-valid-"));
+  const file = join(dir, "billing-glass-ledger.jsonl");
+  writeFileSync(file, JSON.stringify(entry({ messageId: "no-newline" })), "utf8");
+  const ledger = createLedger({}, { storagesDir: dir });
+  assert.equal(ledger.health().recoveredTail, 0);
+  assert.equal(ledger.health().degraded, false);
+  assert.ok(ledger.queryMessage("s1", "no-newline"), "无尾换行的合法记录被保留");
+  assert.ok(readFileSync(file, "utf8").includes("no-newline"), "没有触发 rewrite");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("read failure 不触发 repair，原账本文件不被空记录重写", () => {
+  const dir = mkdtempSync(join(tmpdir(), "billing-glass-ledger-read-fail-"));
+  const file = join(dir, "billing-glass-ledger.jsonl");
+  const original = JSON.stringify(entry({ messageId: "keep" }));
+  writeFileSync(file, original, "utf8");
+  const ledger = createLedger({}, { storagesDir: dir, readText: () => { throw new Error("transient read failure"); } });
+  assert.equal(ledger.health().readError, 1);
+  assert.equal(ledger.health().degraded, true);
+  assert.equal(readFileSync(file, "utf8"), original, "原文件必须保持不变");
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("summary 支持 IANA timezone：同一 epoch 在不同时区归入不同“今日”", () => {
   const { ledger } = makeLedger();
   ledger.record(entry({ time: Date.parse("2026-08-15T05:30:00Z") }));

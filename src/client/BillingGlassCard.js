@@ -114,7 +114,11 @@ import { refreshLedger } from "./message-store.js";
 				: null;
 			// 账本 USD 汇总 → 当前供应商币种换算显示。
 			const usdRate = primary && primary.currency === "CNY" ? 7.2 : 1;
-			const summaryMoney = (bucket) => formatMoney((bucket?.costUsd ?? 0) * usdRate, primary ? primary.currency : "USD");
+			const summaryMoney = (bucket) => {
+				const formatted = formatMoney((bucket?.costUsd ?? 0) * usdRate, primary ? primary.currency : "USD");
+				// USD 是 canonical；换算成 CNY 展示时明确标近似。
+				return primary?.currency === "CNY" ? `≈${formatted}` : formatted;
+			};
 
 			// 手动刷新余额：走 POST 强刷路由（有外部副作用，不用 GET）。
 			const refreshBalance = useCallback(async () => {

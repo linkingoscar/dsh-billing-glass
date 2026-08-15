@@ -33,8 +33,9 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   （按浏览器 IANA 时区归日，避免服务器 UTC 切错日期）。金额以 `costUsd` 为
   聚合基准，展示层按 `costNative + nativeCurrency` 显示，不再用含义模糊的
   单字段 `cost`。
-- **会话费用**：对每条 `assistant/message` 按官方价格政策（含 2026-08-17 峰谷）
-  计价，按 `request/header` 的 provider 归属分账；持久化日志全量回放（包含安装前
+- **会话费用**：对每条 `assistant/message` 按官方价格政策（带有效期，含
+  2026-08-17 峰谷）计价；live/replay 走统一 canonical attribution
+  （header > source，按 messageId 去重合并）。持久化日志全量回放（包含安装前
   的历史）+ 实时账本兜底。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
 - **未知模型 fail closed**：目录里没有的模型（catalog 落后、alias 改名、新模型）
   不会被静默按 0 元计费——该条消息标记「未计价」，卡片与消费统计显示
@@ -84,6 +85,10 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 - **价格目录可能滞后**：非 DeepSeek 供应商价格来自 Harness 内置 pi-ai 目录
   快照；Harness 升级后需重跑 `scripts/sync-providers.js`。DeepSeek 可用
   “校验定价”按钮立即核对官方价格页。
+- **DeepSeek 历史计价只覆盖已审计区间**：政策带 `[since, until]` 有效期；
+  未审计空窗或已退役旧 alias（deepseek-chat/reasoner）会标记“未计价”，
+  不会无限继承旧价格。
+- **官方今日消费固定按北京时间日界线**（Asia/Shanghai），与宿主/服务器时区无关。
 - **型号代称 tag 是启发式展示**：新模型/新命名可能识别不到或显示泛称，
   仅影响显示，不影响计费。
 - **余额刷新存在延迟**：DeepSeek 余额最多 10 秒（其它供应商 60 秒），且

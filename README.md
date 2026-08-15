@@ -40,9 +40,10 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   the only aggregation base; display uses `costNative + nativeCurrency` — the ambiguous
   single `cost` field is gone.
 - **Session cost**: every `assistant/message` is priced against the official price
-  policy (including the 2026-08-17 peak/valley schedule) and attributed to the provider
-  from the `request/header`; full persistent-log replay (including pre-install history)
-  + live ledger fallback. Hover ⓘ for the `tokens × unit price = subtotal` formula.
+  policy (validity windows included, plus the 2026-08-17 peak/valley schedule). Live and
+  replay share one canonical attribution pipeline (header > source) and are merged with
+  messageId dedupe; full persistent-log replay (including pre-install history) + live
+  fallback. Hover ⓘ for the `tokens × unit price = subtotal` formula.
 - **Unknown models fail closed**: a model missing from the catalog (catalog lag, alias
   rename, brand-new model) is never silently priced at zero — the message is marked
   unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
@@ -97,6 +98,11 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 - **The price catalog can lag**: non-DeepSeek prices come from the harness built-in
   pi-ai catalog snapshot; re-run `scripts/sync-providers.js` after harness upgrades.
   DeepSeek can be checked on demand with the "verify pricing" button.
+- **DeepSeek historical pricing only covers audited windows**: policies carry
+  `[since, until]`; unaudited gaps and retired aliases (`deepseek-chat`/`deepseek-reasoner`)
+  are marked unpriced instead of inheriting old prices forever.
+- **Official daily spend uses the Beijing day boundary** (Asia/Shanghai), independent of
+  the host/server timezone.
 - **The model series tag is a display heuristic**: brand-new model names may show no
   tag or a generic one; it never affects pricing.
 - **Balance freshness has latency**: DeepSeek balances refresh at most every 10s (other

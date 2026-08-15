@@ -1,7 +1,7 @@
 // 定价引擎纯函数验证：政策链、峰谷时段、计价。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { priceAt, costOf, isPeak, activePolicy, OFFICIAL_PRICING_POLICIES } from "../lib/providers/deepseek-pricing.js";
+import { priceAt, costOf, isPeak, activePolicy } from "../lib/providers/deepseek-pricing.js";
 
 /** 北京时间指定时刻的 epoch ms。 */
 function beijing(y, m, d, hh = 12, mm = 0) {
@@ -9,10 +9,10 @@ function beijing(y, m, d, hh = 12, mm = 0) {
   return Date.UTC(y, m - 1, d, hh - 8, mm);
 }
 
-test("activePolicy 按 since 选择最新生效政策", () => {
-  assert.equal(activePolicy(beijing(2026, 1, 1)).label, OFFICIAL_PRICING_POLICIES[0].label);
-  assert.equal(activePolicy(beijing(2026, 6, 1)).label, OFFICIAL_PRICING_POLICIES[1].label);
-  assert.equal(activePolicy(beijing(2026, 9, 1)).label, OFFICIAL_PRICING_POLICIES[2].label);
+test("activePolicy 遵守有效期，空窗期返回 null", () => {
+  assert.equal(activePolicy(beijing(2026, 1, 1)), null, "2026-01 无已审计政策覆盖");
+  assert.equal(activePolicy(beijing(2026, 6, 1)).label, "V4 系列 75% 降价转永久（deepseek-v4-flash / deepseek-v4-pro 上线）");
+  assert.equal(activePolicy(beijing(2026, 9, 1)).label, "峰谷定价：高峰 09:00-12:00 / 14:00-18:00（北京时间），空闲时段半价");
 });
 
 test("isPeak 北京时间峰谷判定", () => {
@@ -49,12 +49,21 @@ test("priceAt：2026-05-22 政策（75% 降价转永久）", () => {
   assert.equal(unit.cny.output, 2);
 });
 
-test("priceAt：政策链继承（下架模型沿用旧政策）", () => {
-  const unit = priceAt("deepseek-chat", beijing(2026, 9, 1, 22));
-  assert.equal(unit.mode, "flat");
-  assert.equal(unit.cny.cacheRead, 0.5);
-  assert.equal(unit.cny.input, 2);
-  assert.equal(unit.cny.output, 8);
+test("priceAt：deepseek-chat 退役后不再无限继承旧政策", () => {
+  const before = priceAt("deepseek-chat", beijing(2025, 8, 1));
+  assert.equal(before.mode, "flat");
+  assert.equal(before.cny.input, 2);
+  assert.equal(priceAt("deepseek-chat", beijing(2025, 10, 1)), null, "2025-09-06 后未审计区间不猜测");
+  assert.equal(priceAt("deepseek-chat", beijing(2026, 3, 1)), null, "退役前但 alias 政策未生效时不猜测");
+  assert.equal(priceAt("deepseek-chat", beijing(2026, 9, 1, 22)), null, "2026-07-24 退役后必须未计价");
+});
+
+test("priceAt：2026-04-24 ~ 07-24 旧 alias 按 V4-Flash 语义解析", () => {
+  const alias = priceAt("deepseek-chat", beijing(2026, 6, 1, 10));
+  const flash = priceAt("deepseek-v4-flash", beijing(2026, 6, 1, 10));
+  assert.equal(alias.mode, "flat");
+  assert.deepEqual(alias.cny, flash.cny);
+  assert.deepEqual(alias.usd, flash.usd);
 });
 
 test("priceAt：未知模型 fail closed（返回 null，不再 wildcard 兜底）", () => {
