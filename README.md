@@ -144,7 +144,7 @@ reuses that key; nothing leaves your machine).
 
 **Built-in scope matches the harness official provider list exactly (no setup):**
 
-- The registry ships **25 providers** (`lib/providers/catalog.generated.js`), generated
+- The registry ships **27 providers** (`lib/providers/catalog.generated.js`), generated
   by `scripts/sync-providers.js` from the harness's built-in pi-ai official catalog —
   names, baseURLs and per-model official prices (USD/1M) all match the provider list in
   the harness model settings. Whichever provider is chosen in Settings → Models or used
@@ -157,8 +157,7 @@ reuses that key; nothing leaves your machine).
   and prices.
 - Catalog provenance is auditable: `catalog.generated.js` exports
   `PI_AI_CATALOG_META` (source / sourceVersion / sourceSha256 / generatedAt), written
-  automatically by the sync script. Older snapshots may carry `null` values until the
-  next sync run.
+  automatically by the sync script and enforced non-null by CI.
 
 **Custom providers outside the official list (graceful degradation + guided loop):**
 
@@ -218,16 +217,15 @@ e.g. `api.moonshot.cn` → Moonshot Kimi); unknown baseURLs are never mis-assign
 ## Verification
 
 ```sh
-node scripts/build-client.js          # rebuild lib/client.js from src/client/*
-git diff --exit-code lib/client.js    # confirm the committed bundle matches the source
-node --check lib/index.js
-node --check lib/client.js
-node --check lib/providers/*.js
-node --test tests/*.mjs               # unit + render smoke + state-route integration
-npm pack --dry-run                    # release package contents check
+npm ci                               # locked devDependency (pi-ai catalog sync)
+npm test                             # unit + render smoke + state-route integration
+npm run check:generated              # rebuild client bundle + rerun catalog sync, then git-diff verify
+npm run pack:check                   # release package contents check
 dsh --profile web --dump-config        # composition tree check (the bundle row appears)
 # on-device: restart dsh web; the glass capsule appears in the bottom-right corner
 ```
+
+CI (`.github/workflows/ci.yml`) runs the same gates on every push/PR.
 
 ## License
 

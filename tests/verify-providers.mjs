@@ -73,10 +73,10 @@ test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 
   assert.equal(await noBalance.fetchBalance({}), null, "无公开余额接口的供应商返回 null");
 });
 
-test("目录血缘元数据存在：source/version/hash/generatedAt/generator 字段齐备", () => {
+test("目录血缘元数据必须真实：version/hash/generatedAt 禁止为 null", () => {
   assert.equal(PI_AI_CATALOG_META.source, "@earendil-works/pi-ai dist/providers/data");
   assert.equal(PI_AI_CATALOG_META.generator, "scripts/sync-providers.js");
-  assert.ok("sourceVersion" in PI_AI_CATALOG_META);
-  assert.ok("sourceSha256" in PI_AI_CATALOG_META);
-  assert.ok("generatedAt" in PI_AI_CATALOG_META);
+  assert.ok(typeof PI_AI_CATALOG_META.sourceVersion === "string" && PI_AI_CATALOG_META.sourceVersion !== "", "sourceVersion 必须记录真实版本");
+  assert.match(PI_AI_CATALOG_META.sourceSha256, /^[a-f0-9]{64}$/, "sourceSha256 必须是 64 位 hex");
+  assert.ok(Number.isFinite(Date.parse(PI_AI_CATALOG_META.generatedAt)), "generatedAt 必须是合法时间");
 });

@@ -4,6 +4,14 @@
   "description": "Liquid-glass billing overlay for the DeepSeek Harness Web GUI: provider balances, session cost, daily spend and token buckets. DeepSeek-first with an extensible provider registry.",
   "type": "module",
   "main": "lib/index.js",
+  "scripts": {
+    "test": "node --test \"tests/*.mjs\"",
+    "build:client": "node scripts/build-client.js",
+    "sync:providers": "node scripts/sync-providers.js",
+    "sync:providers:check": "node scripts/sync-providers.js --check",
+    "check:generated": "npm run build:client && npm run sync:providers:check && git diff --exit-code -- lib/client.js lib/providers/catalog.generated.js",
+    "pack:check": "npm pack --dry-run"
+  },
   "files": [
     "lib",
     "src",
@@ -30,7 +38,7 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "^0.84.2"
+    "@earendil-works/pi-ai": "0.84.2"
   },
   "repository": {
     "type": "git",

@@ -57,10 +57,15 @@ test("priceAt：政策链继承（下架模型沿用旧政策）", () => {
   assert.equal(unit.cny.output, 8);
 });
 
-test("priceAt：未知模型走 * 兜底（最新政策）", () => {
-  const unit = priceAt("some-future-model", beijing(2026, 9, 1, 22));
-  assert.equal(unit.mode, "offPeak"); // 22:00 空闲
-  assert.equal(unit.cny.input, 1.5);
+test("priceAt：未知模型 fail closed（返回 null，不再 wildcard 兜底）", () => {
+  assert.equal(priceAt("some-future-model", beijing(2026, 9, 1, 22)), null);
+  assert.equal(priceAt("deepseek-v5-ultra", beijing(2026, 9, 1, 22)), null);
+});
+
+test("priceAt：vendor 前缀与大小写归一后仍能命中已知模型", () => {
+  const unit = priceAt("DeepSeek/deepseek-V4-Pro", beijing(2026, 8, 20, 10));
+  assert.equal(unit.mode, "peak");
+  assert.equal(unit.cny.input, 9);
 });
 
 test("costOf：原生币种与 USD 分开，不再返回模糊 cost", () => {

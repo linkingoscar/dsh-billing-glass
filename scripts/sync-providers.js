@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "lib", "providers", "catalog.generated.js");
+// `--check` 供 CI 使用：保留已提交的 generatedAt，重新生成后只 diff 实质内容。
+const CHECK_MODE = process.argv.includes("--check");
 
 /** 定位 pi-ai 数据目录与包根目录（用于记录 version + source hash 血缘）。 */
 function findSource() {
@@ -29,8 +31,9 @@ function findSource() {
     return { dataDir, packageDir: resolve(dataDir, "../../..") };
   }
   try {
-    const pkgPath = require.resolve("@earendil-works/pi-ai/package.json");
-    const packageDir = dirname(pkgPath);
+    // 该包 exports 只暴露 import 条件：用 ESM 解析入口，再回退两级到包根目录。
+    const entry = import.meta.resolve("@earendil-works/pi-ai");
+    const packageDir = dirname(dirname(fileURLToPath(entry)));
     return { dataDir: join(packageDir, "dist", "providers", "data"), packageDir };
   } catch {
     return null;
@@ -63,11 +66,19 @@ for (const file of readdirSync(dataDir).filter((f) => f.endsWith(".json") && !f.
   hash.update(file);
   hash.update(readFileSync(join(dataDir, file)));
 }
+let generatedAt = new Date().toISOString();
+if (CHECK_MODE) {
+  try {
+    const existing = readFileSync(OUT, "utf8");
+    const match = /"generatedAt":\s*"([^"]+)"/.exec(existing);
+    if (match) generatedAt = match[1];
+  } catch { /* 首次生成没有旧文件，用当前时间 */ }
+}
 const provenance = {
   source: "@earendil-works/pi-ai dist/providers/data",
   sourceVersion,
   sourceSha256: hash.digest("hex"),
-  generatedAt: new Date().toISOString(),
+  generatedAt,
   generator: "scripts/sync-providers.js"
 };
 

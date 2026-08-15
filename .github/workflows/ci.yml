@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: node --check lib/index.js
+      - run: node --check lib/client.js
+      - run: node --check lib/ledger.js
+      - run: npm test
+
+      # 两条生成链都必须与源码一致：src/client -> lib/client.js，
+      # pi-ai -> lib/providers/catalog.generated.js。
+      - run: npm run check:generated
+
+      - run: npm run pack:check

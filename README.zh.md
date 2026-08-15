@@ -46,7 +46,7 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
     与内置政策链逐项对比 → ✅ 已同步 / ⚠ 发现差异（列明细，页面快照落盘到
     `storages/billing-glass-pricing-snapshot.html` 供助手分析）/ 无法解析（页面
     改版，引导对话求助手）。60 秒防抖。
-  - 官方目录供应商（其余 24 家）：提示价格随 Harness 官方目录同步
+  - 官方目录供应商（其余 26 家）：提示价格随 Harness 官方目录同步
     （`scripts/sync-providers.js`），需要立即核对时引导对话求助手。
 - **多供应商自动切换**：卡片自动跟随**当前正在使用的供应商**——
   会话最近请求的 provider（`request/header`）> Harness 后台配置的现行供应商
@@ -130,7 +130,7 @@ dsh plugin --profile web add link:$(pwd)
 
 **预置范围与 Harness 官方提供方列表完全对齐（无感）：**
 
-- 注册表内置 **25 家供应商**（`lib/providers/catalog.generated.js`），由
+- 注册表内置 **27 家供应商**（`lib/providers/catalog.generated.js`），由
   `scripts/sync-providers.js` 从 Harness 内置的 pi-ai 官方目录自动生成——
   名称、baseURL、每个模型的官方价格（USD/1M）都与 Harness 模型配置后台
   的提供方列表一致。在设置 → 模型 里选了谁、会话用了谁，悬浮卡自动切换。
@@ -139,8 +139,8 @@ dsh plugin --profile web add link:$(pwd)
   余额显示「无公开余额接口」。
 - Harness 升级后重跑 `node scripts/sync-providers.js` 即同步最新目录与价格。
 - 数据血缘可审计：`catalog.generated.js` 同时导出 `PI_AI_CATALOG_META`
-  （source / sourceVersion / sourceSha256 / generatedAt），由 sync 脚本自动写入。
-  历史快照未记录版本时这些字段为 `null`，重跑脚本后即补齐。
+  （source / sourceVersion / sourceSha256 / generatedAt），由 sync 脚本自动写入，
+  并由 CI 强制校验非 null。
 
 **官方列表之外的自定义供应商（优雅降级 + 引导闭环）：**
 
@@ -196,16 +196,15 @@ dsh plugin --profile web add link:$(pwd)
 ## 验证
 
 ```sh
-node scripts/build-client.js          # 从 src/client/* 重建 lib/client.js
-git diff --exit-code lib/client.js    # 确认提交的 bundle 与源码一致
-node --check lib/index.js
-node --check lib/client.js
-node --check lib/providers/*.js
-node --test tests/*.mjs               # 单元 + 渲染冒烟 + state 路由集成
-npm pack --dry-run                    # 发布包内容校验
+npm ci                               # 锁定 devDependency（pi-ai 目录同步用）
+npm test                             # 单元 + 渲染冒烟 + state 路由集成
+npm run check:generated              # 重建 client bundle + 重跑 catalog sync，并 git diff 校验
+npm run pack:check                   # 发布包内容校验
 dsh --profile web --dump-config        # 组合树校验（bundle 行出现）
 # 真机：重启 dsh web，页面右下角出现玻璃胶囊
 ```
+
+CI（`.github/workflows/ci.yml`）会对每个 push/PR 执行同样的门禁。
 
 ## License
 
