@@ -16,11 +16,21 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 
 - **Always-on glass capsule**: status dot + provider name + balance at a glance; click
   to expand. The expanded card's header is draggable (position stored in localStorage).
+  The expanded card automatically avoids the bottom navigation bar and disables
+  horizontal overflow — no horizontal scrollbar needed to reach content.
+- **Fresh data**: the client polls every 10s; the DeepSeek balance cache TTL is 10s
+  (other providers 60s); window focus, tab visibility change and card expansion refresh
+  immediately, and the manual refresh button force-bypasses the cache for the current
+  provider.
 - **Liquid-glass material**: `backdrop-filter` frost + translucent theme colors +
   specular highlight border + refraction sheen layer + soft float shadow; follows the
   `--dsw-*` light/dark theme automatically.
 - **Per-message cost badge**: each assistant message's action bar shows a small cost
   chip (hover for the input/cache/output token split and model).
+- **Model series tag**: the capsule and card show a short alias for the current model —
+  DeepSeek Pro/Flash, Moonshot K2.5/K3, GPT 5.6-Sol/5.6-Terra/5.6-Luna, Claude
+  Opus-4, Gemini 2.5-Pro, Qwen 3.7-Max, GLM 5.2; long tags ellipsize instead of
+  stretching the card.
 - **Spend ledger & stats**: a persistent ledger (`storages/billing-glass-ledger.json`,
   idempotent, debounced atomic writes); the expanded card shows today / this month /
   all-time totals (aggregated in USD, converted to the current provider's currency).
@@ -166,6 +176,8 @@ e.g. `api.moonshot.cn` → Moonshot Kimi); unknown baseURLs are never mis-assign
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/providers/*.js
+node --test tests/*.mjs               # unit + render smoke + state-route integration
+npm pack --dry-run                    # release package contents check
 dsh --profile web --dump-config        # composition tree check (the bundle row appears)
 # on-device: restart dsh web; the glass capsule appears in the bottom-right corner
 ```

@@ -14,11 +14,18 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 ## 功能
 
 - **玻璃胶囊常驻**：状态点 + 供应商名 + 余额，一瞥即得，不用切窗口查余额；
-  点击展开完整卡片，展开卡头部可拖动（位置存 localStorage）。
+  点击展开完整卡片，展开卡头部可拖动（位置存 localStorage）。展开卡会自动
+  避让底部导航条，并禁用横向溢出——不需要靠横向滚动条拖内容出来看。
+- **即时刷新**：客户端每 10 秒轮询；DeepSeek 余额服务端缓存 TTL 10 秒
+  （其它供应商 60 秒）；窗口重新聚焦、标签页切回、卡片展开时立即刷新；
+  点刷新按钮会绕过缓存强制拉取当前供应商的最新余额。
 - **液态玻璃材质**：`backdrop-filter` 磨砂增艳 + 半透明主题底色 + 镜面高光描边 +
   折射光斑层 + 柔和悬浮投影；自动跟随 `--dsw-*` 亮/暗主题。
 - **逐条消息费用角标**：每条 assistant 消息动作条上显示当条费用小徽章
   （悬停见输入/缓存/输出 token 拆分与模型）。
+- **型号代称 tag**：胶囊与展开卡显示当前模型的短标签——DeepSeek
+  Pro/Flash、Moonshot K2.5/K3、GPT 5.6-Sol/5.6-Terra/5.6-Luna、Claude
+  Opus-4、Gemini 2.5-Pro、Qwen 3.7-Max、GLM 5.2 等；长标签自动省略，不撑卡。
 - **消费账本与统计**：持久化账本（`storages/billing-glass-ledger.json`，
   幂等、防抖原子写），展开卡显示 今日 / 本月 / 累计 消费统计
   （USD 汇总后按当前供应商币种换算）。
@@ -154,6 +161,8 @@ dsh plugin --profile web add link:$(pwd)
 node --check lib/index.js
 node --check lib/client.js
 node --check lib/providers/*.js
+node --test tests/*.mjs               # 单元 + 渲染冒烟 + state 路由集成
+npm pack --dry-run                    # 发布包内容校验
 dsh --profile web --dump-config        # 组合树校验（bundle 行出现）
 # 真机：重启 dsh web，页面右下角出现玻璃胶囊
 ```
