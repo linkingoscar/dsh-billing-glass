@@ -1,6 +1,6 @@
 // 主悬浮卡组件（胶囊态 + 展开态）。
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, jsx, jsxs, Fragment } from "./runtime.js";
-import { POLL_MS, STATE_PATH, POS_KEY, COLLAPSED_KEY, CARD_W, BOTTOM_NAV_OFFSET } from "./constants.js";
+import { POLL_MS, STATE_PATH, POS_KEY, COLLAPSED_KEY, CARD_W, BOTTOM_CLAMP_OFFSET } from "./constants.js";
 import { currencySymbol, formatMoney, formatTokens, formatTime, clamp, loadPos, loadCollapsed } from "./format.js";
 import { modelBadgeFor } from "./model-badge.js";
 import { injectStyles, glass, sheen, glassButton, RefreshIcon, InfoIcon, TokenBar } from "./visuals.js";
@@ -191,7 +191,7 @@ import { refreshLedger } from "./message-store.js";
 				if (!dragMovedRef.current && Math.hypot(dx, dy) < 4) return;
 				dragMovedRef.current = true;
 				const nextRight = clamp(d.baseX - dx, 8, Math.max(8, vw - CARD_W - 8));
-				const nextBottom = clamp(d.baseY - dy, BOTTOM_NAV_OFFSET, Math.max(BOTTOM_NAV_OFFSET, vh - cardSize.h - 8));
+				const nextBottom = clamp(d.baseY - dy, BOTTOM_CLAMP_OFFSET, Math.max(BOTTOM_CLAMP_OFFSET, vh - cardSize.h - 8));
 				setPos({ right: nextRight, bottom: nextBottom });
 			};
 			const onPointerUp = () => {
@@ -338,7 +338,7 @@ import { refreshLedger } from "./message-store.js";
 			// 贴顶贴边都不留空气墙。
 			const cardPos = {
 				right: clamp(pos.right, 8, Math.max(8, vw - CARD_W - 8)),
-				bottom: clamp(pos.bottom, BOTTOM_NAV_OFFSET, Math.max(BOTTOM_NAV_OFFSET, vh - cardSize.h - 8))
+				bottom: clamp(pos.bottom, BOTTOM_CLAMP_OFFSET, Math.max(BOTTOM_CLAMP_OFFSET, vh - cardSize.h - 8))
 			};
 			const card = {
 				...glass,
@@ -349,7 +349,7 @@ import { refreshLedger } from "./message-store.js";
 				pointerEvents: "auto",
 				boxSizing: "border-box",
 				width: CARD_W,
-				maxHeight: `calc(100vh - ${BOTTOM_NAV_OFFSET + 16}px)`,
+				maxHeight: `calc(100vh - ${BOTTOM_CLAMP_OFFSET + 16}px)`,
 				overflowX: "hidden",
 				overflowY: "auto",
 				scrollbarWidth: "thin",

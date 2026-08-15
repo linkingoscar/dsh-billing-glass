@@ -15,8 +15,8 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 ## Features
 
 - **Always-on glass capsule**: status dot + provider name + balance at a glance; click
-  to expand. The expanded card's header is draggable (position stored in localStorage).
-  The expanded card automatically avoids the bottom navigation bar and disables
+  to expand. The expanded card's header is draggable (position stored in localStorage;
+  it can be dragged anywhere on the page with no bottom dead zone). The card disables
   horizontal overflow — no horizontal scrollbar needed to reach content.
 - **Fresh data**: the client polls every 10s; the DeepSeek balance cache TTL is 10s
   (other providers 60s); window focus, tab visibility change and card expansion refresh
@@ -45,10 +45,10 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   rename, brand-new model) is never silently priced at zero — the message is marked
   unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
   `priced: false`.
-- **Daily spend**: balance-delta estimate (cumulative balance decreases, daily state
-  persisted; using up the balance and topping up again does not zero out earlier
-  consumption, though a top-up and spend inside the same polling interval are
-  indistinguishable).
+- **Daily spend (official only)**: the row appears only when
+  `DEEPSEEK_PLATFORM_TOKEN` is configured. Without it the row is hidden — a
+  balance-delta estimate would be confused by top-ups/refunds, so it is no longer a
+  display source.
 - **Pricing sync check (button)**: the card's "plan" row has a **↻ verify pricing**
   button that pulls the official pricing source of **only the currently displayed
   provider** and compares it against the built-in policy chain → ✅ synced / ⚠ drift
@@ -64,17 +64,16 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 - **Plan / fee system**: each provider declares its `plan` (`token` pay-as-you-go /
   `subscription`); the "plan" row shows the billing mode + the current price tier
   (standard / peak / valley).
-- **Daily spend (official, optional)**: by default estimated from the balance delta
-  (`≈`). Set `DEEPSEEK_PLATFORM_TOKEN` to switch to official platform data (the exact
-  `consumed` value):
+- **Daily spend (official, optional)**: without `DEEPSEEK_PLATFORM_TOKEN` the row is
+  hidden. With it, the card shows the exact official `consumed` value:
 
   1. Sign in at https://platform.deepseek.com, open DevTools → Console, run
      `JSON.parse(localStorage.getItem('userToken')).value`
   2. Add the result to `~/.dsh/.credentials.yaml`:
      `DEEPSEEK_PLATFORM_TOKEN: <token>`
-  3. Refresh the page; the card's daily spend switches to the official figure. Expired
-     tokens prompt a re-fetch. Failures fall back to the balance-delta estimate — the
-     display never breaks.
+  3. Refresh the page; the card's "today consumed" row appears with the official
+     figure. Expired tokens or API failures hide the row rather than falling back to a
+     misleading balance-delta estimate.
 
 ## Structure
 
