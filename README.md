@@ -45,8 +45,10 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   rename, brand-new model) is never silently priced at zero — the message is marked
   unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
   `priced: false`.
-- **Daily spend**: balance-delta estimate (`start-of-day − current`, daily state
-  persisted).
+- **Daily spend**: balance-delta estimate (cumulative balance decreases, daily state
+  persisted; using up the balance and topping up again does not zero out earlier
+  consumption, though a top-up and spend inside the same polling interval are
+  indistinguishable).
 - **Pricing sync check (button)**: the card's "plan" row has a **↻ verify pricing**
   button that pulls the official pricing source of **only the currently displayed
   provider** and compares it against the built-in policy chain → ✅ synced / ⚠ drift
