@@ -91,6 +91,27 @@ test("basename alias 只在唯一匹配时使用；歧义 fail closed", () => {
   assert.equal(provider.priceAt("model-x", Date.now()), null, "裸 basename 有歧义，必须 fail closed");
 });
 
+test("含 / 的 catalog id 不做 basename 猜测：bar/model-x 不会按唯一的 foo/model-x 计价", () => {
+  const provider = defineOpenAiCompatProvider({
+    id: "slash-only-test",
+    displayName: "Slash Only",
+    baseUrl: "https://slash-only.example/v1",
+    baseUrlHosts: ["slash-only.example"],
+    prices: {
+      "foo/model-x": { input: 1, cacheRead: 0.1, output: 2 }
+    },
+    planLabel: "test"
+  });
+  assert.ok(provider.priceAt("foo/model-x", Date.now()) !== null, "exact 命中");
+  assert.equal(provider.priceAt("bar/model-x", Date.now()), null, "不同 namespace 不能猜成 foo/model-x");
+  assert.equal(provider.priceAt("model-x", Date.now()), null, "裸 basename 也不能反向猜含 / 的 catalog id");
+});
+
+test("不含 / 的 catalog id 仍可兼容 vendor 前缀 alias", () => {
+  const xai = PROVIDERS.find((p) => p.id === "xai");
+  assert.ok(xai.priceAt("xai/grok-4.3", Date.now()) !== null, "xai/grok-4.3 命中 grok-4.3");
+});
+
 test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 不抛错", async () => {
   const withBalance = matchProvider("pi-ai", "https://openrouter.ai/api/v1");
   assert.equal(withBalance.keyRef, "OPENROUTER_API_KEY");

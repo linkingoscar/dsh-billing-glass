@@ -103,6 +103,37 @@ test("旧版 billing-glass-ledger.json 自动迁移为原生币种语义", () =>
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("损坏 JSONL：坏行计数、尾部残行恢复并重写修复", () => {
+  const dir = mkdtempSync(join(tmpdir(), "billing-glass-ledger-corrupt-"));
+  const file = join(dir, "billing-glass-ledger.jsonl");
+  const lines = [
+    JSON.stringify(entry({ messageId: "ok1" })),
+    "{ this is not valid json",
+    JSON.stringify(entry({ messageId: "ok2" }))
+  ];
+  writeFileSync(file, lines.join("\n") + "\n" + '{"sessionId":"s1","messageId":"tail-partial"', "utf8");
+
+  const ledger = createLedger({}, { storagesDir: dir });
+  const health = ledger.health();
+  assert.equal(health.invalidLines, 1);
+  assert.equal(health.recoveredTail, 1);
+  assert.equal(health.degraded, true);
+  assert.equal(ledger.querySession("s1").length, 2, "坏行被跳过，合法记录保留");
+
+  const repaired = readFileSync(file, "utf8").trim().split("\n");
+  assert.equal(repaired.length, 2, "启动后立即 compact 修复文件，只保留合法记录");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("summary 支持 IANA timezone：同一 epoch 在不同时区归入不同“今日”", () => {
+  const { ledger } = makeLedger();
+  ledger.record(entry({ time: Date.parse("2026-08-15T05:30:00Z") }));
+  const now = new Date("2026-08-15T00:30:00Z");
+  assert.equal(ledger.summary(now, "Asia/Shanghai").today.calls, 1, "上海已是 8/15，计入今日");
+  assert.equal(ledger.summary(now, "America/New_York").today.calls, 0, "纽约还是 8/14，不计入今日");
+  assert.equal(ledger.summary(now, "America/New_York").total.calls, 1);
+});
+
 test("summary 暴露未计价条数（fail closed 记录）", () => {
   const { ledger } = makeLedger();
   ledger.record(entry());

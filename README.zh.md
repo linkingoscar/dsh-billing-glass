@@ -17,8 +17,8 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   点击展开完整卡片，展开卡头部可拖动（位置存 localStorage，可拖到页面任意
   位置，底部没有空气墙）。卡片禁用横向溢出——不需要靠横向滚动条拖内容出来看。
 - **即时刷新**：客户端每 10 秒轮询；DeepSeek 余额服务端缓存 TTL 10 秒
-  （其它供应商 60 秒）；窗口重新聚焦、标签页切回、卡片展开时立即刷新；
-  点刷新按钮会绕过缓存强制拉取当前供应商的最新余额。
+  （其它供应商 60 秒）；官方今日消费缓存 5 分钟；窗口重新聚焦、标签页切回、
+  卡片展开时立即刷新；点刷新按钮走 POST 强刷当前供应商余额。
 - **液态玻璃材质**：`backdrop-filter` 磨砂增艳 + 半透明主题底色 + 镜面高光描边 +
   折射光斑层 + 柔和悬浮投影；自动跟随 `--dsw-*` 亮/暗主题。
 - **逐条消息费用角标**：每条 assistant 消息动作条上显示当条费用小徽章
@@ -28,9 +28,11 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   Opus-4、Gemini 2.5-Pro、Qwen 3.7-Max、GLM 5.2 等；长标签自动省略，不撑卡。
 - **消费账本与统计**：append-only JSONL 账本
   （`storages/billing-glass-ledger.jsonl`，幂等、防抖追加、定期压缩；
-  旧版 `billing-glass-ledger.json` 自动迁移），展开卡显示 今日 / 本月 / 累计
-  消费统计。金额以 `costUsd` 为聚合基准，展示层按 `costNative + nativeCurrency`
-  显示，不再用含义模糊的单字段 `cost`。
+  旧版 `billing-glass-ledger.json` 自动迁移；启动时检测坏行/尾部残行并自动修复，
+  卡片显示 degraded 警告），展开卡显示 今日 / 本月 / 累计 消费统计
+  （按浏览器 IANA 时区归日，避免服务器 UTC 切错日期）。金额以 `costUsd` 为
+  聚合基准，展示层按 `costNative + nativeCurrency` 显示，不再用含义模糊的
+  单字段 `cost`。
 - **会话费用**：对每条 `assistant/message` 按官方价格政策（含 2026-08-17 峰谷）
   计价，按 `request/header` 的 provider 归属分账；持久化日志全量回放（包含安装前
   的历史）+ 实时账本兜底。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
@@ -125,6 +127,17 @@ dsh plugin --profile web add link:$(pwd)
 
 然后重启 `dsh web` 并刷新页面。要求 Harness 支持 `dsh plugin` 命令，且已在
 **设置 → 模型** 配置 `DEEPSEEK_API_KEY`（余额查询复用这把 Key，不出本机）。
+
+## 安全与信任边界
+
+- 插件自身**不做调用方认证**，假设 Harness 的 `webServer` 已绑定本机或已有认证中间件；
+  如果宿主把 webServer 暴露到公网，请在宿主层加认证。
+- `GET /api/billing-glass/state` 与 `GET /api/billing-glass/ledger` 只读
+  （余额/今日消费的外部请求有 TTL 缓存，不会被 UI 轮询无限放大）。
+- 有副作用的路由是 **POST**：`/api/billing-glass/refresh-balance`（强刷供应商余额）
+  和 `/api/billing-glass/refresh-pricing`（拉官方定价页并可能写快照）。
+- DeepSeek 平台 token 只由 host 本机用于 platform.deepseek.com 内部接口，
+  且今日消费缓存 5 分钟。
 
 ## 接入新的 API 供应商
 

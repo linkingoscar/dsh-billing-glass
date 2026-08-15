@@ -19,9 +19,9 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   it can be dragged anywhere on the page with no bottom dead zone). The card disables
   horizontal overflow — no horizontal scrollbar needed to reach content.
 - **Fresh data**: the client polls every 10s; the DeepSeek balance cache TTL is 10s
-  (other providers 60s); window focus, tab visibility change and card expansion refresh
-  immediately, and the manual refresh button force-bypasses the cache for the current
-  provider.
+  (other providers 60s); official daily spend is cached for 5 minutes; window focus, tab
+  visibility change and card expansion refresh immediately, and the manual refresh button
+  force-refreshes the current provider balance via POST.
 - **Liquid-glass material**: `backdrop-filter` frost + translucent theme colors +
   specular highlight border + refraction sheen layer + soft float shadow; follows the
   `--dsw-*` light/dark theme automatically.
@@ -33,10 +33,12 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   stretching the card.
 - **Spend ledger & stats**: an append-only JSONL ledger
   (`storages/billing-glass-ledger.jsonl`, idempotent, debounced appends, periodic
-  compaction; the legacy `billing-glass-ledger.json` is migrated automatically); the
-  expanded card shows today / this month / all-time totals. `costUsd` is the only
-  aggregation base; display uses `costNative + nativeCurrency` — the ambiguous single
-  `cost` field is gone.
+  compaction; the legacy `billing-glass-ledger.json` is migrated automatically; bad
+  lines and partial tails are detected at startup, repaired and surfaced as a degraded
+  warning). The expanded card shows today / this month / all-time totals, bucketed by the
+  browser's IANA timezone so a UTC server does not shift the day boundary. `costUsd` is
+  the only aggregation base; display uses `costNative + nativeCurrency` — the ambiguous
+  single `cost` field is gone.
 - **Session cost**: every `assistant/message` is priced against the official price
   policy (including the 2026-08-17 peak/valley schedule) and attributed to the provider
   from the `request/header`; full persistent-log replay (including pre-install history)
@@ -139,6 +141,19 @@ dsh plugin --profile web add link:$(pwd)
 Then restart `dsh web` and refresh the page. Requires a harness with the `dsh plugin`
 command and a `DEEPSEEK_API_KEY` configured in **Settings → Models** (the balance query
 reuses that key; nothing leaves your machine).
+
+## Security / trust boundary
+
+- The plugin performs **no caller authentication**; it assumes the harness `webServer` is
+  localhost-bound or sits behind host-provided auth middleware. If the host exposes the
+  web server publicly, add authentication at the host layer.
+- `GET /api/billing-glass/state` and `GET /api/billing-glass/ledger` are read-only
+  (balance/today external fetches are TTL-cached, so UI polling cannot amplify them).
+- Side-effecting routes are **POST**: `/api/billing-glass/refresh-balance` (force-refresh
+  a provider balance) and `/api/billing-glass/refresh-pricing` (fetch the official price
+  page and possibly write a snapshot).
+- The DeepSeek platform token is only used host-side against the platform's internal
+  usage endpoint, and today-consumed results are cached for 5 minutes.
 
 ## Adding an API provider
 

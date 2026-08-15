@@ -1,6 +1,6 @@
 // 聚合路由集成冒烟：用 mock ctx 直接驱动 apply()，
 // 验证 /api/billing-glass/state 的 sessionId 传递、会话费用、
-// DeepSeek 余额缓存 TTL 与 force 绕过（不访问真实网络）。
+// DeepSeek 余额缓存 TTL 与 POST 强刷路由（不访问真实网络）。
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -69,16 +69,18 @@ const ctx = {
 
 apply(ctx);
 const stateHandler = routes.get("/api/billing-glass/state");
+const refreshBalanceHandler = routes.get("/api/billing-glass/refresh-balance");
 assert.ok(typeof stateHandler === "function", "state 路由已注册");
+assert.ok(typeof refreshBalanceHandler === "function", "refresh-balance 路由已注册");
 
-function request(url) {
+function request(handler, url, method = "GET") {
   return new Promise((resolve) => {
     let body = "";
     const res = {
       writeHead(status) { res.status = status; },
       end(chunk) { body += chunk; res.status = res.status ?? 200; resolve({ status: res.status, body: JSON.parse(body) }); }
     };
-    stateHandler({ url }, res).catch(() => {});
+    handler({ url, method }, res).catch(() => {});
   });
 }
 
@@ -96,7 +98,7 @@ test("state 路由：sessionId 驱动会话费用与活跃供应商，DeepSeek �
       usage: { inputTokens: 2_000_000, cacheReadTokens: 0, outputTokens: 1_000_000 }
     }
   });
-  const { status, body } = await request("/api/billing-glass/state?sessionId=s1");
+  const { status, body } = await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
   assert.equal(status, 200);
   assert.equal(body.ok, true);
   assert.equal(body.sessionId, "s1");
@@ -112,15 +114,17 @@ test("state 路由：sessionId 驱动会话费用与活跃供应商，DeepSeek �
   assert.equal(deepseek.keyConfigured, true);
 });
 
-test("state 路由：force=1&providerId 绕过 DeepSeek 余额缓存", async () => {
+test("POST refresh-balance 绕过 DeepSeek 余额缓存，GET state 保持只读", async () => {
   const before = fetchCalls;
-  await request("/api/billing-glass/state?sessionId=s1");
+  await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
   assert.equal(fetchCalls, before, "缓存命中不重复请求余额接口");
-  await request("/api/billing-glass/state?sessionId=s1&force=1&providerId=deepseek");
-  assert.equal(fetchCalls, before + 1, "force 绕过缓存重新请求余额接口");
   balanceTotal = 88;
-  const { body } = await request("/api/billing-glass/state?sessionId=s1&force=1&providerId=deepseek");
-  assert.equal(body.providers.find((p) => p.id === "deepseek").balance.total, 88, "刷新后拿到新余额");
+  await request(refreshBalanceHandler, "/api/billing-glass/refresh-balance?providerId=deepseek", "POST");
+  assert.equal(fetchCalls, before + 1, "POST 强刷绕过缓存重新请求余额接口");
+  const { body } = await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
+  assert.equal(body.providers.find((p) => p.id === "deepseek").balance.total, 88, "强刷后 GET 拿到新余额");
+  const rejected = await request(refreshBalanceHandler, "/api/billing-glass/refresh-balance?providerId=deepseek", "GET");
+  assert.equal(rejected.status, 405, "GET 调用强刷路由被拒绝");
 });
 
 test("state 路由：未知模型 fail closed，计入 unpricedCalls 而不是 0 元", async () => {
@@ -137,7 +141,7 @@ test("state 路由：未知模型 fail closed，计入 unpricedCalls 而不是 0
       usage: { inputTokens: 1000, cacheReadTokens: 0, outputTokens: 100 }
     }
   });
-  const { body } = await request("/api/billing-glass/state?sessionId=s1&force=1&providerId=deepseek");
+  const { body } = await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
   const xai = body.providers.find((p) => p.id === "xai");
   assert.ok(xai, "xai provider 行存在");
   assert.equal(xai.session.unpricedCalls, 1);
@@ -146,7 +150,7 @@ test("state 路由：未知模型 fail closed，计入 unpricedCalls 而不是 0
 });
 
 test("state 路由：未传 sessionId 时回退后台配置供应商", async () => {
-  const { body } = await request("/api/billing-glass/state");
+  const { body } = await request(stateHandler, "/api/billing-glass/state");
   assert.equal(body.activeProvider, null);
   assert.equal(body.configuredProvider, "deepseek");
 });
