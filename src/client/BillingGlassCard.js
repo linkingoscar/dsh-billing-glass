@@ -376,6 +376,12 @@ import { refreshLedger } from "./message-store.js";
 
 			const session = primary && primary.session ? primary.session : null;
 			const sessionCurrency = session?.nativeCurrency ?? primary?.currency ?? "USD";
+			// 滚动升级兼容：新 host 给 costNative；旧 host 只有 cost（原生币种语义）。
+			const sessionCostNative = Number.isFinite(session?.costNative)
+				? session.costNative
+				: Number.isFinite(session?.cost)
+					? session.cost
+					: (Number.isFinite(session?.costUsd) ? session.costUsd * (sessionCurrency === "CNY" ? 7.2 : 1) : 0);
 			const breakdown = session && Array.isArray(session.breakdown) ? session.breakdown.filter((b) => b && typeof b === "object" && b.tokens > 0) : [];
 			const today = primary && primary.today ? primary.today : null;
 
@@ -539,7 +545,7 @@ import { refreshLedger } from "./message-store.js";
 											style: { display: "flex", alignItems: "center", gap: 4, fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
 											children: [
 												jsx("span", { style: { color: "var(--dsw-alias-label-secondary)", fontWeight: 400 }, children: "本会话费用" }),
-												jsx("span", { children: formatMoney(session.costNative, sessionCurrency) }),
+												jsx("span", { children: formatMoney(sessionCostNative, sessionCurrency) }),
 												jsx("span", {
 													role: "button",
 													tabIndex: 0,
@@ -603,7 +609,7 @@ import { refreshLedger } from "./message-store.js";
 											children: jsxs(Fragment, {
 												children: [
 													jsx("div", { style: sheen }),
-													jsx("div", { style: { fontWeight: 600, fontSize: 12, fontVariantNumeric: "tabular-nums" }, children: `本会话费用 = ${formatMoney(session.costNative, sessionCurrency)}` }),
+													jsx("div", { style: { fontWeight: 600, fontSize: 12, fontVariantNumeric: "tabular-nums" }, children: `本会话费用 = ${formatMoney(sessionCostNative, sessionCurrency)}` }),
 													...breakdown.map((b) => jsxs("div", {
 														style: { display: "flex", justifyContent: "space-between", gap: 8, fontVariantNumeric: "tabular-nums" },
 														children: [

@@ -9,9 +9,12 @@ import { messageCostStore } from "./message-store.js";
 			const record = map ? map.get(messageId) : void 0;
 			if (record === void 0) return null;
 			const unpriced = record.priced === false;
-			const nativeCurrency = record.nativeCurrency ?? "USD";
+			const nativeCurrency = record.nativeCurrency ?? record.currency ?? "USD";
+			const recordCostNative = Number.isFinite(record.costNative)
+				? record.costNative
+				: Number.isFinite(record.cost) ? record.cost : 0;
 			const symbol = currencySymbol(nativeCurrency);
-			const label = unpriced ? "未计价" : formatMoney(record.costNative, nativeCurrency);
+			const label = unpriced ? "未计价" : formatMoney(recordCostNative, nativeCurrency);
 			const detail = unpriced
 				? `暂无价格，费用未计入 · 模型 ${record.model ?? "unknown"}`
 				: [
