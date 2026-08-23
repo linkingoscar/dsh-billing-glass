@@ -5,32 +5,55 @@ import { currencySymbol, formatMoney, formatTokens, formatTime, clamp, loadPos, 
 import { modelBadgeFor } from "./model-badge.js";
 import { injectStyles, glass, sheen, glassButton, RefreshIcon, InfoIcon, TokenBar } from "./visuals.js";
 import { refreshLedger } from "./message-store.js";
+import { loadPrefs, subscribePrefs } from "./prefs.js";
+
+/** state 路由响应里的供应商行（/api/billing-glass/state providers[i]）。
+ * @typedef {{id: string, displayName: string, currency: string, isConfiguredProvider?: boolean, keyConfigured?: boolean|null, refreshSupported?: boolean, plan?: {kind: string, label: string}|null, rateMode?: string|null, balance?: {total: number, granted?: number, toppedUp?: number, available?: boolean}|null, balanceError?: string|null, session?: any|null, today?: {consumed: number, source: string}|null}} ProviderRow
+ */
+/** state 路由响应体（本插件使用面）。
+ * @typedef {{ok: true, sessionId?: string, activeProvider?: string|null, activeModel?: string|null, configuredProvider?: string|null, configuredModel?: string|null, unrecognized?: {provider: string|null, baseUrl: string|null, model: string|null}|null, fxCnyPerUsd?: number, summary?: {today: SummaryBucketView, month: SummaryBucketView, total: SummaryBucketView}|null, ledgerHealth?: {degraded?: boolean, invalidLines?: number, recoveredTail?: number}|null, providers?: ProviderRow[]}} BillingState
+ */
+/** 消费统计桶（客户端视图：原生分组 + USD 基准）。
+ * @typedef {{costUsd?: number, native?: Record<string, number>, calls?: number, unpricedCalls?: number, inputTokens?: number, cacheReadTokens?: number, outputTokens?: number}} SummaryBucketView
+ */
+/** 定价校验结果状态。
+ * @typedef {{status: string, message?: string|null, details: string[], pending?: boolean, checkedAt?: number}} RefreshStateView
+ */
+/** 指针拖拽会话的起点快照。
+ * @typedef {{startX: number, startY: number, baseX: number, baseY: number}} DragStart
+ */
+
 		// ---- the widget -------------------------------------------------
+		/**
+		 * @param {{useSessions?: unknown}} props
+		 */
 		export function BillingGlassCard(props) {
 			const useSessions = props.useSessions;
-			const [state, setState] = useState(null);
+			const [state, setState] = useState(/** @type {BillingState|null} */ (null));
 			const [phase, setPhase] = useState("loading"); // loading | ready | error
 			const [message, setMessage] = useState("");
-			const [updatedAt, setUpdatedAt] = useState(null);
+			const [updatedAt, setUpdatedAt] = useState(/** @type {Date|null} */ (null));
 			const [spinning, setSpinning] = useState(false);
 			const [collapsed, setCollapsed] = useState(loadCollapsed);
 			const [pos, setPos] = useState(loadPos);
 			const [tipOpen, setTipOpen] = useState(false);
-			const [viewId, setViewId] = useState(null); // null = 自动跟随现行供应商
-			const [refreshState, setRefreshState] = useState(null); // 定价校验结果
+			const [viewId, setViewId] = useState(/** @type {string|null} */ (null)); // null = 自动跟随现行供应商
+			const [refreshState, setRefreshState] = useState(/** @type {RefreshStateView|null} */ (null)); // 定价校验结果
 			const [showExtra, setShowExtra] = useState(false); // 展开其它官方供应商
+			const [prefs, setPrefs] = useState(loadPrefs); // 显示偏好（设置卡片可改）
+			useEffect(() => subscribePrefs(setPrefs), []);
 
 			// 视口尺寸（渲染期读取；stub 环境兜底）。
 			const vw = typeof window !== "undefined" && Number.isFinite(window.innerWidth) ? window.innerWidth : 1200;
 			const vh = typeof window !== "undefined" && Number.isFinite(window.innerHeight) ? window.innerHeight : 800;
 			const mounted = useRef(true);
-			const drag = useRef(null);
+			const drag = useRef(/** @type {DragStart|null} */ (null));
 			const posRef = useRef(pos);
 			const loadSeqRef = useRef(0);
-			const loadAbortRef = useRef(null);
+			const loadAbortRef = useRef(/** @type {AbortController|null} */ (null));
 			useEffect(() => { posRef.current = pos; }, [pos]);
 
-			const currentSessionId = typeof useSessions === "function" ? useSessions((s) => s.current) : void 0;
+			const currentSessionId = typeof useSessions === "function" ? useSessions((/** @type {{current?: string}} */ s) => s.current) : void 0;
 
 			useEffect(() => { injectStyles(); }, []);
 
@@ -68,7 +91,7 @@ import { refreshLedger } from "./message-store.js";
 						refreshLedger(currentSessionId);
 					}
 				} catch (error) {
-					if (error !== null && typeof error === "object" && error.name === "AbortError") return;
+					if (error !== null && typeof error === "object" && /** @type {{name?: string}} */ (error).name === "AbortError") return;
 					if (!mounted.current || seq !== loadSeqRef.current) return;
 					setPhase("error");
 					setMessage(error instanceof Error ? error.message : String(error));
@@ -109,15 +132,30 @@ import { refreshLedger } from "./message-store.js";
 				providers.find((p) => p.id === autoId) ??
 				providers[0] ?? null;
 			const manualView = viewId !== null;
-			const rateLabel = primary
-				? ({ flat: "标准价", peak: "峰时价", offPeak: "谷时价" })[primary.rateMode] ?? null
+			/** @type {Record<string, string>} */
+			const rateLabels = { flat: "标准价", peak: "峰时价", offPeak: "谷时价" };
+			const rateLabel = primary && primary.rateMode !== undefined && primary.rateMode !== null
+				? rateLabels[primary.rateMode] ?? null
 				: null;
-			// 账本 USD 汇总 → 当前供应商币种换算显示。
-			const usdRate = primary && primary.currency === "CNY" ? 7.2 : 1;
+			// 消费统计展示：单币种且与当前供应商一致 → 原生精确合计（无换算）；
+			// 混合币种 → 按 USD 基准 × 官方隐含汇率换算成当前供应商币种（标 ≈）。
+			const fxCnyPerUsd = state !== null && Number.isFinite(state.fxCnyPerUsd) && /** @type {number} */ (state.fxCnyPerUsd) > 0 ? /** @type {number} */ (state.fxCnyPerUsd) : 7.2;
+			/**
+			 * @param {SummaryBucketView|undefined|null} bucket
+			 * @returns {string}
+			 */
 			const summaryMoney = (bucket) => {
-				const formatted = formatMoney((bucket?.costUsd ?? 0) * usdRate, primary ? primary.currency : "USD");
-				// USD 是 canonical；换算成 CNY 展示时明确标近似。
-				return primary?.currency === "CNY" ? `≈${formatted}` : formatted;
+				const currency = primary ? primary.currency : "USD";
+				const native = bucket?.native ?? null;
+				if (native !== null && typeof native === "object") {
+				 const filled = Object.entries(native).filter(([, value]) => value > 0);
+				 if (filled.length === 1 && filled[0][0] === currency) {
+					 return formatMoney(filled[0][1], currency);
+				 }
+				 if (filled.length === 0) return formatMoney(0, currency);
+				}
+				const formatted = formatMoney((bucket?.costUsd ?? 0) * (currency === "CNY" ? fxCnyPerUsd : 1), currency);
+				return currency === "CNY" ? `≈${formatted}` : formatted;
 			};
 
 			// 手动刷新余额：走 POST 强刷路由（有外部副作用，不用 GET）。
@@ -188,7 +226,7 @@ import { refreshLedger } from "./message-store.js";
 
 			// 拖拽（整卡可拖：4px 阈值区分点击与拖动；按卡片实测尺寸 clamp，
 			// 头部永不会被拖出视口，贴顶/贴边都无空气墙）。
-			const cardRef = useRef(null);
+			const cardRef = useRef(/** @type {any} */ (null));
 			const [cardSize, setCardSize] = useState({ w: CARD_W, h: 320 });
 			// useLayoutEffect：DOM 更新后、浏览器绘制前同步测量，
 			// 高度进 state 触发同步重渲染——paint 前位置已校正，无可见闪动。
@@ -201,14 +239,20 @@ import { refreshLedger } from "./message-store.js";
 				}
 			});
 			const dragMovedRef = useRef(false);
+			/**
+			 * @param {{button?: number, target?: any, currentTarget?: {setPointerCapture?: (id: number) => void}, pointerId?: number, clientX: number, clientY: number}} event
+			 */
 			const onPointerDown = (event) => {
 				if (event.button !== 0) return;
 				const t = event.target;
 				if (t && typeof t.closest === "function" && t.closest("button, [role='button'], a, input")) return;
-				event.currentTarget.setPointerCapture?.(event.pointerId);
+				event.currentTarget?.setPointerCapture?.(/** @type {number} */ (event.pointerId));
 				dragMovedRef.current = false;
 				drag.current = { startX: event.clientX, startY: event.clientY, baseX: pos.right, baseY: pos.bottom };
 			};
+			/**
+			 * @param {{clientX: number, clientY: number}} event
+			 */
 			const onPointerMove = (event) => {
 				const d = drag.current;
 				if (!d) return;
@@ -261,21 +305,27 @@ import { refreshLedger } from "./message-store.js";
 			// ---- collapsed capsule --------------------------------------
 			// 胶囊同样可拖动：按下移动超过 4px 判定为拖动，否则视为点击展开。
 			// 左侧贴边需要胶囊实际宽度（估算宽度会在左边留空隙）。
-			const capsuleRef = useRef(null);
+			const capsuleRef = useRef(/** @type {any} */ (null));
 			const capsuleWidthRef = useRef(180);
 			useEffect(() => {
 				if (capsuleRef.current && typeof capsuleRef.current.offsetWidth === "number") {
 					capsuleWidthRef.current = capsuleRef.current.offsetWidth || 180;
 				}
 			});
-			const capsuleDrag = useRef(null);
+			const capsuleDrag = useRef(/** @type {DragStart|null} */ (null));
 			const capsuleMovedRef = useRef(false);
+			/**
+			 * @param {{button?: number, currentTarget?: {setPointerCapture?: (id: number) => void}, pointerId?: number, clientX: number, clientY: number}} event
+			 */
 			const capsulePointerDown = (event) => {
 				if (event.button !== 0) return;
-				event.currentTarget.setPointerCapture?.(event.pointerId);
+				event.currentTarget?.setPointerCapture?.(/** @type {number} */ (event.pointerId));
 				capsuleMovedRef.current = false;
 				capsuleDrag.current = { startX: event.clientX, startY: event.clientY, baseX: pos.right, baseY: pos.bottom };
 			};
+			/**
+			 * @param {{clientX: number, clientY: number}} event
+			 */
 			const capsulePointerMove = (event) => {
 				const d = capsuleDrag.current;
 				if (!d) return;
@@ -299,6 +349,10 @@ import { refreshLedger } from "./message-store.js";
 				toggleCollapsed();
 			};
 
+			// 设置卡片里关掉胶囊：整体不渲染（回到设置页可重新打开）。
+			// 此分支位于所有 hooks 之后，符合 React Hooks 规则。
+			if (prefs.capsule === false) return null;
+
 			if (collapsed) {
 				return jsx("div", {
 					ref: capsuleRef,
@@ -312,7 +366,7 @@ import { refreshLedger } from "./message-store.js";
 					onPointerMove: capsulePointerMove,
 					onPointerUp: capsulePointerUp,
 					onClick: capsuleClick,
-					onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(); } },
+					onKeyDown: (/** @type {{key: string, preventDefault: () => void}} */ e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(); } },
 					style: {
 						...glass,
 						position: "absolute",
@@ -408,24 +462,28 @@ import { refreshLedger } from "./message-store.js";
 				: Number.isFinite(session?.cost)
 					? session.cost
 					: (Number.isFinite(session?.costUsd) ? session.costUsd * (sessionCurrency === "CNY" ? 7.2 : 1) : 0);
-			const breakdown = session && Array.isArray(session.breakdown) ? session.breakdown.filter((b) => b && typeof b === "object" && b.tokens > 0) : [];
+			const breakdown = session && Array.isArray(session.breakdown) ? session.breakdown.filter((/** @type {{tokens?: number}} */ b) => b && typeof b === "object" && b.tokens !== undefined && b.tokens > 0) : [];
 			// 只展示官方口径；旧 host 若返回 estimate 也直接隐藏，避免余额差估算误导。
 			const today = primary && primary.today && primary.today.source === "official" ? primary.today : null;
 
 			// 供应商列表：默认只显示"相关"的（当前显示 / 已配 Key / 有余额 / 后台现行），
 			// 其余官方目录供应商折叠进一行，避免展开卡过长。
-			const pinnedRows = providers.filter((p) =>
+			const pinnedRows = providers.filter((/** @type {ProviderRow} */ p) =>
 				p.id === primary.id || p.keyConfigured === true || p.balance !== null || p.isConfiguredProvider === true
 			);
-			const extraRows = providers.filter((p) => !pinnedRows.includes(p));
+			/** @type {ProviderRow[]} */
+			const extraRows = providers.filter((/** @type {ProviderRow} */ p) => !pinnedRows.includes(p));
 
+			/**
+			 * @param {ProviderRow} p
+			 */
 			const providerRow = (p) => jsxs("div", {
 				role: "button",
 				tabIndex: 0,
 				"aria-label": `查看 ${p.displayName}`,
 				title: p.id === primary.id && manualView ? "点击恢复自动跟随" : `查看 ${p.displayName} 详情`,
 				onClick: () => { setViewId(viewId === p.id ? null : p.id); },
-				onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewId(viewId === p.id ? null : p.id); } },
+				onKeyDown: (/** @type {{key: string, preventDefault: () => void}} */ e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewId(viewId === p.id ? null : p.id); } },
 				style: {
 					display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
 					fontSize: 11, lineHeight: "16px", fontVariantNumeric: "tabular-nums",
@@ -486,7 +544,7 @@ import { refreshLedger } from "./message-store.js";
 									"aria-label": "刷新计费与余额",
 									title: "刷新",
 									disabled: spinning,
-									onPointerDown: (e) => { e.stopPropagation(); },
+									onPointerDown: (/** @type {{stopPropagation: () => void}} */ e) => { e.stopPropagation(); },
 									onClick: async () => { await refreshBalance(); load(); },
 									children: jsx(RefreshIcon, { spinning })
 								}),
@@ -495,7 +553,7 @@ import { refreshLedger } from "./message-store.js";
 									style: glassButton,
 									"aria-label": "折叠为胶囊",
 									title: "折叠",
-									onPointerDown: (e) => { e.stopPropagation(); },
+									onPointerDown: (/** @type {{stopPropagation: () => void}} */ e) => { e.stopPropagation(); },
 									onClick: toggleCollapsed,
 									children: jsx("svg", {
 										width: 12, height: 12, viewBox: "0 0 16 16", fill: "none",
@@ -567,7 +625,7 @@ import { refreshLedger } from "./message-store.js";
 											})
 										})
 										: null,
-									state.ledgerHealth?.degraded
+									state?.ledgerHealth?.degraded
 										? jsx("div", {
 											role: "status",
 											style: {
@@ -578,7 +636,7 @@ import { refreshLedger } from "./message-store.js";
 												fontSize: 10, lineHeight: "15px",
 												color: "var(--dsw-alias-label-primary)"
 											},
-											children: `⚠ 本地账本检测到损坏记录（无效行 ${state.ledgerHealth.invalidLines}、尾部残行 ${state.ledgerHealth.recoveredTail}），已跳过并修复文件`
+											children: `⚠ 本地账本检测到损坏记录（无效行 ${state?.ledgerHealth?.invalidLines ?? 0}、尾部残行 ${state?.ledgerHealth?.recoveredTail ?? 0}），已跳过并修复文件`
 										})
 										: null,
 									session
@@ -651,7 +709,7 @@ import { refreshLedger } from "./message-store.js";
 												children: [
 													jsx("div", { style: sheen }),
 													jsx("div", { style: { fontWeight: 600, fontSize: 12, fontVariantNumeric: "tabular-nums" }, children: `本会话费用 = ${formatMoney(sessionCostNative, sessionCurrency)}` }),
-													...breakdown.map((b) => jsxs("div", {
+													...breakdown.map((/** @type {{label: string, tokens: number, rate: number, subtotal: number}} */ b) => jsxs("div", {
 														style: { display: "flex", justifyContent: "space-between", gap: 8, fontVariantNumeric: "tabular-nums" },
 														children: [
 															jsx("span", { style: { color: "var(--dsw-alias-label-secondary)" }, children: b.label }),
@@ -701,7 +759,7 @@ import { refreshLedger } from "./message-store.js";
 										: null,
 									state?.summary
 										? jsx("div", {
-											title: "本机账本统计（按消息时刻计价，USD 汇总后按当前供应商币种换算）",
+											title: "本机账本统计（单币种按原生金额精确显示；混合币种按官方隐含汇率换算，标 ≈）",
 											style: {
 												display: "flex", flexWrap: "nowrap", gap: 4, alignItems: "center",
 												color: "var(--dsw-alias-label-secondary)", fontSize: 9,
@@ -712,14 +770,14 @@ import { refreshLedger } from "./message-store.js";
 											children: jsxs(Fragment, {
 												children: [
 													jsx("span", { style: { fontWeight: 600 }, children: "消费统计" }),
-													state.summary.total.unpricedCalls > 0
-														? jsx("span", { style: { color: "#F5A623" }, children: `未计价${state.summary.total.unpricedCalls}` })
+													(state?.summary?.total.unpricedCalls ?? 0) > 0
+														? jsx("span", { style: { color: "#F5A623" }, children: `未计价${state?.summary?.total.unpricedCalls ?? 0}` })
 														: null,
-													jsx("span", { children: `今日${summaryMoney(state.summary.today)}` }),
+													jsx("span", { children: `今日${summaryMoney(state?.summary?.today)}` }),
 													jsx("span", { children: "·" }),
-													jsx("span", { children: `本月${summaryMoney(state.summary.month)}` }),
+													jsx("span", { children: `本月${summaryMoney(state?.summary?.month)}` }),
 													jsx("span", { children: "·" }),
-													jsx("span", { children: `累计${summaryMoney(state.summary.total)}` })
+													jsx("span", { children: `累计${summaryMoney(state?.summary?.total)}` })
 												]
 											})
 										})

@@ -67,11 +67,11 @@ test("未知模型 fail closed：返回 null，绝不按 0 元计费", () => {
 });
 
 test("带 / 的合法 catalog model id：exact 命中不被 basename strip 破坏", () => {
-  const baseten = PROVIDERS.find((p) => p.id === "baseten");
-  assert.ok(baseten, "baseten provider 存在");
-  assert.ok(baseten.priceAt("deepseek-ai/DeepSeek-V4-Pro", Date.now()) !== null, "完整 catalog id 应命中");
-  assert.ok(baseten.priceAt("DEEPSEEK-AI/deepseek-v4-pro", Date.now()) !== null, "完整 id 大小写不敏感命中");
-  assert.ok(baseten.priceAt("moonshotai/Kimi-K3", Date.now()) !== null, "另一个带 / 的 catalog id 应命中");
+  const openrouter = PROVIDERS.find((p) => p.id === "openrouter");
+  assert.ok(openrouter, "openrouter provider 存在");
+  assert.ok(openrouter.priceAt("deepseek/deepseek-v4-flash", Date.now()) !== null, "完整 catalog id 应命中");
+  assert.ok(openrouter.priceAt("DEEPSEEK/DEEPSEEK-V4-FLASH", Date.now()) !== null, "完整 id 大小写不敏感命中");
+  assert.ok(openrouter.priceAt("deepseek/deepseek-v4-pro", Date.now()) !== null, "另一个带 / 的 catalog id 应命中");
 });
 
 test("basename alias 只在唯一匹配时使用；歧义 fail closed", () => {

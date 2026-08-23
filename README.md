@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.2.0-informational)](#)
+[![version](https://img.shields.io/badge/version-0.3.0-informational)](#)
 [![harness](https://img.shields.io/badge/DeepSeek%20Harness-web%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -27,9 +27,13 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   `--dsw-*` light/dark theme automatically.
 - **Per-message cost badge**: each assistant message's action bar shows a small cost
   chip (hover for the input/cache/output token split and model).
+- **Settings card**: a "Billing capsule" page in the settings panel
+  (Harness v0.1.0-rc.7+; hidden automatically on older hosts): toggle the glass
+  capsule / per-message cost chips, and reset the card position in one click.
+  Changes apply instantly and stay in the local browser only.
 - **Model series tag**: the capsule and card show a short alias for the current model —
-  DeepSeek Pro/Flash, Moonshot K2.5/K3, GPT 5.6-Sol/5.6-Terra/5.6-Luna, Claude
-  Opus-4, Gemini 2.5-Pro, Qwen 3.7-Max, GLM 5.2; long tags ellipsize instead of
+  DeepSeek Pro/Flash/Flash-Vision, Moonshot K2.5/K3, GPT 5.6-Sol/5.6-Terra/5.6-Luna,
+  Claude Opus-4, Gemini 2.5-Pro, Qwen 3.7-Max, GLM 5.2; long tags ellipsize instead of
   stretching the card.
 - **Spend ledger & stats**: an append-only JSONL ledger
   (`storages/billing-glass-ledger.jsonl`, idempotent, debounced appends, periodic
@@ -40,10 +44,14 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   the only aggregation base; display uses `costNative + nativeCurrency` — the ambiguous
   single `cost` field is gone.
 - **Session cost**: every `assistant/message` is priced against the official price
-  policy (validity windows included, plus the 2026-08-17 peak/valley schedule). Live and
-  replay share one canonical attribution pipeline (header > source) and are merged with
-  messageId dedupe; full persistent-log replay (including pre-install history) + live
-  fallback. Hover ⓘ for the `tokens × unit price = subtotal` formula.
+  policy (validity windows included, plus the 2026-08-17 peak/valley schedule). The
+  experimental vision model `deepseek-v4-flash-vision-exp` (shipped in Harness
+  v0.1.1-rc.1) is priced exactly like v4-flash (images are billed as size-converted
+  tokens). Live and replay share one canonical attribution pipeline (header > source)
+  and are merged with messageId dedupe; full persistent-log replay (including
+  pre-install history) + live fallback; hosts whose persistence backend has no
+  per-session raw artifacts degrade to live-only automatically. Hover ⓘ for the
+  `tokens × unit price = subtotal` formula.
 - **Unknown models fail closed**: a model missing from the catalog (catalog lag, alias
   rename, brand-new model) is never silently priced at zero — the message is marked
   unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
@@ -83,6 +91,12 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 - **"Daily spend" is official-only**: the row is hidden unless
   `DEEPSEEK_PLATFORM_TOKEN` is configured. A balance-delta estimate is no longer
   displayed because top-ups/refunds make it unreliable.
+- **Peak windows are weekdays-only per the official page as of 2026-08-23**: the
+  official footnote defines peak hours as Mon–Fri 9:00–12:00 / 14:00–18:00 Beijing
+  time (weekends are all off-peak). The page did not spell this out between
+  2026-08-17 and 08-22; replay stats use the current definition, so replayed amounts
+  for those days may be slightly below the real bill if the platform billed daily
+  peak/valley back then.
 - **Session cost and spend stats are locally computed, not a provider invoice**: they
   are priced from the plugin's built-in official price tables and message tokens, and
   may differ slightly from the final platform bill (pricing moment, rounding,
@@ -117,8 +131,8 @@ dsh-billing-glass/
 ├── cordis.patch.yml          # composition patch layer
 ├── scripts/
 │   ├── build-client.js       # src/client/* → lib/client.js (install still needs no build)
-│   └── sync-providers.js     # pi-ai catalog sync + provenance recording
-├── src/client/               # maintainable browser source (component/format/model-badge/materials)
+│   ├── sync-providers.js     # pi-ai catalog sync + provenance recording
+├── src/client/               # maintainable browser source (component/format/model-badge/prefs/settings)
 └── lib/
     ├── index.js              # host: aggregate route /api/billing-glass/state + event pricing
     ├── ledger.js             # append-only JSONL spend ledger
@@ -165,7 +179,7 @@ reuses that key; nothing leaves your machine).
 
 **Built-in scope matches the harness official provider list exactly (no setup):**
 
-- The registry ships **27 providers** (`lib/providers/catalog.generated.js`), generated
+- The registry ships **25 providers** (`lib/providers/catalog.generated.js`), generated
   by `scripts/sync-providers.js` from the harness's built-in pi-ai official catalog —
   names, baseURLs and per-model official prices (USD/1M) all match the provider list in
   the harness model settings. Whichever provider is chosen in Settings → Models or used

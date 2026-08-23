@@ -1,6 +1,6 @@
 {
   "name": "dsh-billing-glass",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Liquid-glass billing overlay for the DeepSeek Harness Web GUI: provider balances, session cost, daily spend and token buckets. DeepSeek-first with an extensible provider registry.",
   "type": "module",
   "main": "lib/index.js",
@@ -38,7 +38,7 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "0.84.2"
+    "@earendil-works/pi-ai": "0.82.1"
   },
   "repository": {
     "type": "git",

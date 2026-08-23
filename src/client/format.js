@@ -1,5 +1,6 @@
 // 纯展示层格式工具：金额/token/时间/位置。
 import { POS_KEY, COLLAPSED_KEY } from "./constants.js";
+		/** @param {string} code */
 		export function currencySymbol(code) {
 			switch (code) {
 				case "CNY": return "¥";
@@ -11,6 +12,10 @@ import { POS_KEY, COLLAPSED_KEY } from "./constants.js";
 			}
 		}
 
+		/**
+		 * @param {number} value
+		 * @param {string} currency
+		 */
 		export function formatMoney(value, currency) {
 			const symbol = currencySymbol(currency);
 			if (!Number.isFinite(value) || value <= 0) return `${symbol}0`;
@@ -20,11 +25,13 @@ import { POS_KEY, COLLAPSED_KEY } from "./constants.js";
 			return `${symbol}${value.toPrecision(2)}`;
 		}
 
+		/** @param {number} value */
 		export function formatTokens(value) {
 			return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 		}
 
 
+		/** @param {Date} date */
 		export function formatTime(date) {
 			const hh = String(date.getHours()).padStart(2, "0");
 			const mm = String(date.getMinutes()).padStart(2, "0");
@@ -32,6 +39,11 @@ import { POS_KEY, COLLAPSED_KEY } from "./constants.js";
 			return `${hh}:${mm}:${ss}`;
 		}
 
+		/**
+		 * @param {number} value
+		 * @param {number} min
+		 * @param {number} max
+		 */
 		export function clamp(value, min, max) {
 			return Math.min(max, Math.max(min, value));
 		}

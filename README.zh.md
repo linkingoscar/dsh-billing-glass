@@ -1,7 +1,7 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.2.0-informational)](#)
+[![version](https://img.shields.io/badge/version-0.3.0-informational)](#)
 [![harness](https://img.shields.io/badge/DeepSeek%20Harness-web%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -23,9 +23,13 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   折射光斑层 + 柔和悬浮投影；自动跟随 `--dsw-*` 亮/暗主题。
 - **逐条消息费用角标**：每条 assistant 消息动作条上显示当条费用小徽章
   （悬停见输入/缓存/输出 token 拆分与模型）。
+- **设置卡片**：设置面板新增「计费悬浮卡」页（Harness v0.1.0-rc.7+；更早宿主
+  自动隐藏）：可关闭悬浮胶囊 / 逐条费用角标，并可一键恢复悬浮卡默认位置；
+  偏好即时生效，仅保存在本机浏览器。
 - **型号代称 tag**：胶囊与展开卡显示当前模型的短标签——DeepSeek
-  Pro/Flash、Moonshot K2.5/K3、GPT 5.6-Sol/5.6-Terra/5.6-Luna、Claude
-  Opus-4、Gemini 2.5-Pro、Qwen 3.7-Max、GLM 5.2 等；长标签自动省略，不撑卡。
+  Pro/Flash/Flash-Vision、Moonshot K2.5/K3、GPT 5.6-Sol/5.6-Terra/5.6-Luna、
+  Claude Opus-4、Gemini 2.5-Pro、Qwen 3.7-Max、GLM 5.2 等；长标签自动省略，
+  不撑卡。
 - **消费账本与统计**：append-only JSONL 账本
   （`storages/billing-glass-ledger.jsonl`，幂等、防抖追加、定期压缩；
   旧版 `billing-glass-ledger.json` 自动迁移；启动时检测坏行/尾部残行并自动修复，
@@ -34,9 +38,12 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   聚合基准，展示层按 `costNative + nativeCurrency` 显示，不再用含义模糊的
   单字段 `cost`。
 - **会话费用**：对每条 `assistant/message` 按官方价格政策（带有效期，含
-  2026-08-17 峰谷）计价；live/replay 走统一 canonical attribution
+  2026-08-17 峰谷）计价；视觉实验模型 `deepseek-v4-flash-vision-exp`
+  （Harness v0.1.1-rc.1 起提供）与 v4-flash 同价同峰谷（图片按尺寸折算
+  token 计费）；live/replay 走统一 canonical attribution
   （header > source，按 messageId 去重合并）。持久化日志全量回放（包含安装前
-  的历史）+ 实时账本兜底。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
+  的历史）+ 实时账本兜底；宿主持久层不支持逐会话原始工件时自动降级为
+  实时账本。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
 - **未知模型 fail closed**：目录里没有的模型（catalog 落后、alias 改名、新模型）
   不会被静默按 0 元计费——该条消息标记「未计价」，卡片与消费统计显示
   `未计价 N`，账本记录 `priced: false`。
@@ -45,11 +52,12 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 - **定价同步校验（按钮）**：展开卡「套餐」行的 **↻ 校验定价** 按钮，只拉取
   **当前显示的那家供应商**的官方定价源，验证计费体系是否最新（不批量刷新，
   避免对多家官网同时请求）：
-  - DeepSeek：拉官方定价页（api-docs.deepseek.com）解析现行价/峰谷表/生效日期，
-    与内置政策链逐项对比 → ✅ 已同步 / ⚠ 发现差异（列明细，页面快照落盘到
+  - DeepSeek：拉官方定价页（api-docs.deepseek.com）解析峰谷矩阵
+    （flash / pro / vision-exp 三列），与内置政策链逐项对比 →
+    ✅ 已同步 / ⚠ 发现差异（列明细，页面快照落盘到
     `storages/billing-glass-pricing-snapshot.html` 供助手分析）/ 无法解析（页面
     改版，引导对话求助手）。60 秒防抖。
-  - 官方目录供应商（其余 26 家）：提示价格随 Harness 官方目录同步
+  - 官方目录供应商（其余 24 家）：提示价格随 Harness 官方目录同步
     （`scripts/sync-providers.js`），需要立即核对时引导对话求助手。
 - **多供应商自动切换**：卡片自动跟随**当前正在使用的供应商**——
   会话最近请求的 provider（`request/header`）> Harness 后台配置的现行供应商
@@ -76,6 +84,10 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 - **会话费用与消费统计是本地计价，不是供应商账单**：按插件内置的官方价格表
   与消息 token 计算，可能与平台最终账单存在微小差异（计价时点、四舍五入、
   峰谷口径等）。
+- **峰谷“周一至周五”限定以 2026-08-23 官方页面为准**：官方脚注明确高峰仅限
+  工作日（周末全天谷价）；2026-08-17~08-22 期间官方页面未写明该限定，回放
+  统计按现行定义计算，若平台当时实际按每日峰谷结算，这几天的回放金额可能
+  略低于账单。
 - **消费统计只覆盖插件见过的消息**：当前会话可通过持久化日志回放安装前的
   历史；从未经插件处理过的其它历史会话不会出现在本地账本中。
 - **未知模型 fail closed**：目录里没有的模型标记“未计价”而不是按 0 元计费，
@@ -103,8 +115,8 @@ dsh-billing-glass/
 ├── cordis.patch.yml          # 组合包补丁层
 ├── scripts/
 │   ├── build-client.js       # src/client/* → lib/client.js（用户仍无构建安装）
-│   └── sync-providers.js     # pi-ai 官方目录同步 + 数据血缘记录
-├── src/client/               # 浏览器端维护源码（模块化：组件/格式/型号 tag/材质）
+│   ├── sync-providers.js     # pi-ai 官方目录同步 + 数据血缘记录
+├── src/client/               # 浏览器端维护源码（组件/格式/型号 tag/材质/偏好/设置卡片）
 └── lib/
     ├── index.js              # host：聚合路由 /api/billing-glass/state + 事件计费
     ├── ledger.js             # append-only JSONL 消费账本
@@ -148,7 +160,7 @@ dsh plugin --profile web add link:$(pwd)
 
 **预置范围与 Harness 官方提供方列表完全对齐（无感）：**
 
-- 注册表内置 **27 家供应商**（`lib/providers/catalog.generated.js`），由
+- 注册表内置 **25 家供应商**（`lib/providers/catalog.generated.js`），由
   `scripts/sync-providers.js` 从 Harness 内置的 pi-ai 官方目录自动生成——
   名称、baseURL、每个模型的官方价格（USD/1M）都与 Harness 模型配置后台
   的提供方列表一致。在设置 → 模型 里选了谁、会话用了谁，悬浮卡自动切换。
@@ -223,7 +235,6 @@ dsh --profile web --dump-config        # 组合树校验（bundle 行出现）
 ```
 
 CI（`.github/workflows/ci.yml`）会对每个 push/PR 执行同样的门禁。
-
 ## License
 
 [Apache-2.0](LICENSE) © 2026 [linkingoscar](https://github.com/linkingoscar)

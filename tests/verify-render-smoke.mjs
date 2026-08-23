@@ -31,22 +31,26 @@ delete globalThis.window;
 function collectComponents() {
   let card = null;
   let chip = null;
+  let settings = null;
   exports.apply({
     slots: {
       inject: (_slot, fn) => { fn(); return () => {}; },
       register: (descriptor, component) => {
         if (descriptor.id === "billing-glass") card = component;
         if (descriptor.id === "billing-glass-cost") chip = component;
+        if (descriptor.id === "billing-glass" && descriptor.name === "settings.section") settings = component;
+        if (descriptor.name === "settings.section") settings = component;
       }
     }
   });
-  return { card, chip };
+  return { card, chip, settings };
 }
 
 test("client bundle 注册与组件注册", () => {
-  const { card, chip } = collectComponents();
+  const { card, chip, settings } = collectComponents();
   assert.ok(card, "悬浮卡组件已注册");
   assert.ok(chip, "角标组件已注册");
+  assert.ok(settings, "设置卡片组件已注册（settings.section）");
 });
 
 test("BillingGlassCard 函数体可完整执行（加载/就绪两态）", () => {
@@ -68,5 +72,20 @@ test("BillingGlassCard 展开态（collapsed=false）执行不抛错", () => {
   };
   const { card } = collectComponents();
   card({ useSessions: () => void 0 });
+  delete globalThis.localStorage;
+});
+
+test("设置卡片组件函数体可完整执行（含开关行与恢复位置按钮）", () => {
+  globalThis.localStorage = {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {}
+  };
+  // settings-section 通过 runtime.js 取 hooks；stub 已在 factory 级注入，
+  // 组件体执行只需不抛错（jsx 调用返回参数数组）。
+  const { settings } = collectComponents();
+  assert.ok(typeof settings === "function");
+  const tree = settings({});
+  assert.ok(tree !== undefined && tree !== null, "设置卡片应渲染出内容树");
   delete globalThis.localStorage;
 });

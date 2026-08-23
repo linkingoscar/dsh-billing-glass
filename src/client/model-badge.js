@@ -1,15 +1,22 @@
 // 型号代称：把模型名折叠成短标签（fail-soft 的展示层逻辑）。
 
-		/** 根据供应商与模型名生成一个简短型号代称（如 DeepSeek Pro/Flash、K2.5、5.6-Sol、Opus-4）。 */
+		/**
+		 * 根据供应商与模型名生成一个简短型号代称（如 DeepSeek Pro/Flash、K2.5、5.6-Sol、Opus-4）。
+		 * @param {{id?: string}|null|undefined} provider
+		 * @param {unknown} model
+		 * @returns {string|null}
+		 */
 		export function modelBadgeFor(provider, model) {
 			if (typeof model !== "string" || model === "") return null;
 			const text = model;
 			const lower = text.toLowerCase();
-			const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+			const cap = (/** @type {string} */ s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 			const isDeepSeek = provider?.id === "deepseek" || lower.includes("deepseek");
 			if (isDeepSeek) {
 				if (/(^|[^a-z0-9])pro([^a-z0-9]|$)/i.test(text)) return "Pro";
+				// deepseek-v4-flash-vision-exp：先判 vision 再判 flash。
+				if (lower.includes("vision")) return "Flash-Vision";
 				if (/(^|[^a-z0-9])flash([^a-z0-9]|$)/i.test(text)) return "Flash";
 			}
 
@@ -41,7 +48,7 @@
 			// Claude：claude-opus-4 -> Opus-4，claude-haiku-4.5 -> Haiku-4.5
 			if (lower.includes("claude")) {
 				const tier = text.match(/(opus|sonnet|haiku|fable)/i)?.[1];
-				const version = text.match(/claude[^0-9]*(\d+(?:\.\d+)?)/i)?.[1];
+				const version = text.match(/claude[^0-9]*(\d+(?:\.\d+)?)/i)?.[1] ?? null;
 				const tierLabel = tier ? cap(tier) : "Claude";
 				return version ? `${tierLabel}-${version}` : tierLabel;
 			}

@@ -2,11 +2,18 @@
 import { jsx, useState, useEffect } from "./runtime.js";
 import { currencySymbol, formatMoney, formatTokens } from "./format.js";
 import { subscribeMessageStore, readMessageCost } from "./message-store.js";
+import { loadPrefs, subscribePrefs } from "./prefs.js";
 
+/**
+ * @param {{messageId?: unknown, sessionId?: unknown}} props
+ */
 export function MessageCostChip({ messageId, sessionId }) {
 	// Hooks 必须在任何 early return 之前调用（React Hooks 规则）。
-	const [, setTick] = useState(0);
-	useEffect(() => subscribeMessageStore(() => setTick((t) => t + 1)), []);
+	const [, setTick] = useState(/** @type {number} */ (0));
+	const [prefs, setPrefs] = useState(loadPrefs);
+	useEffect(() => subscribeMessageStore(() => setTick((/** @type {number} */ t) => t + 1)), []);
+	useEffect(() => subscribePrefs(setPrefs), []);
+	if (prefs.costChip === false) return null;
 	if (typeof messageId !== "string" || typeof sessionId !== "string") return null;
 	const record = readMessageCost(sessionId, messageId);
 	if (record === void 0) return null;

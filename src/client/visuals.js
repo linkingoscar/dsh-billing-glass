@@ -51,6 +51,9 @@ import { jsx, jsxs, Fragment } from "./runtime.js";
 		};
 
 		// ---- tiny visuals ----------------------------------------------
+		/**
+		 * @param {{spinning?: boolean}} _
+		 */
 		export function RefreshIcon({ spinning }) {
 			return jsx("svg", {
 				width: 13, height: 13, viewBox: "0 0 16 16", fill: "none",
@@ -76,10 +79,16 @@ import { jsx, jsxs, Fragment } from "./runtime.js";
 			});
 		}
 
-		/** 输入/缓存/输出三桶占比条（玻璃细条）。 */
+		/** 输入/缓存/输出三桶占比条（玻璃细条）。
+		 * @param {{input: number, cacheRead: number, output: number}} _
+		 */
 		export function TokenBar({ input, cacheRead, output }) {
 			const total = input + cacheRead + output;
 			if (total <= 0) return null;
+			/**
+			 * @param {string} color
+			 * @param {number} flex
+			 */
 			const seg = (color, flex) => ({
 				height: 3, borderRadius: 999, background: color,
 				flex, minWidth: flex > 0.02 ? 2 : 0, transition: "flex 0.3s ease"
