@@ -9,6 +9,11 @@ English | [中文](README.zh.md)
 
 > 社区第三方插件，与 DeepSeek 官方无隶属关系 · Unofficial community plugin, not affiliated with or endorsed by DeepSeek.
 
+<p align="center">
+  <img src="docs/assets/dsh-billing-expanded.png" alt="Expanded billing card / 展开态计费卡" width="260" />
+  <img src="docs/assets/dsh-billing-capsule.png" alt="Capsule / 胶囊态" width="150" />
+</p>
+
 A billing overlay plugin for the DeepSeek Harness Web GUI: a **liquid-glass** capsule
 pinned to the bottom-right corner showing the provider balance; click to expand a full
 billing card (session cost, daily spend, token-bucket breakdown, provider list).

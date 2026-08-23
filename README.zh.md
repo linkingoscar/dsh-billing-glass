@@ -13,6 +13,11 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 
 > 社区第三方插件，与 DeepSeek 官方无隶属关系 · Unofficial community plugin, not affiliated with or endorsed by DeepSeek.
 
+<p align="center">
+  <img src="docs/assets/dsh-billing-expanded.png" alt="Expanded billing card / 展开态计费卡" width="260" />
+  <img src="docs/assets/dsh-billing-capsule.png" alt="Capsule / 胶囊态" width="150" />
+</p>
+
 ## 功能
 
 - **玻璃胶囊常驻**：状态点 + 供应商名 + 余额，一瞥即得，不用切窗口查余额；
