@@ -57,3 +57,17 @@ npm run pack:check          # 发布包内容检查
 - **重大决策须附决策文件**：`docs/decisions/NNNN-<slug>.md`（模板：背景 /
   决策 / 备选方案 / 后果），只增不改；CHANGELOG 记"改了什么"，decisions
   记"为什么"。参考现有 0001–0004。
+
+### 发布纪律
+
+- feature 版本（minor）先打 -rc tag 在真机自测数日，再正式发布；
+  补丁版（patch）可直接发布。
+- 上游漂移 Issue（upstream-watch 自动创建）视为高优先级待办：
+  先同步目录/政策链，再合入其它变更。
+
+## PR 自查清单
+
+- [ ] pm test、	ypecheck、lint、check:generated 全绿
+- [ ] 金额相关改动附带了对应测试
+- [ ] README（双语）/ CHANGELOG 已同步
+- [ ] 未引入运行时依赖；devDependency 变更已说明理由

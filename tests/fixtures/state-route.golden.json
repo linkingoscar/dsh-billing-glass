@@ -1,0 +1,530 @@
+{
+  "activeModel": "deepseek-v4-pro",
+  "activeProvider": "deepseek",
+  "configuredModel": "deepseek-v4-pro",
+  "configuredProvider": "deepseek",
+  "fxCnyPerUsd": 6.8182,
+  "ledgerHealth": {
+    "degraded": false,
+    "invalidLines": 0,
+    "readError": 0,
+    "records": 2,
+    "recoveredTail": 0
+  },
+  "ok": true,
+  "providers": [
+    {
+      "balance": {
+        "available": true,
+        "granted": 10,
+        "toppedUp": 90,
+        "total": 100
+      },
+      "balanceError": null,
+      "currency": "CNY",
+      "displayName": "DeepSeek",
+      "id": "deepseek",
+      "isConfiguredProvider": true,
+      "keyConfigured": true,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方价格政策（含峰谷时段）"
+      },
+      "rateMode": "offPeak",
+      "refreshSupported": true,
+      "session": {
+        "breakdown": [
+          {
+            "label": "输入(未命中)",
+            "rate": 4.5,
+            "subtotal": 13.5,
+            "tokens": 3000000
+          },
+          {
+            "label": "缓存命中",
+            "rate": 0,
+            "subtotal": 0,
+            "tokens": 0
+          },
+          {
+            "label": "输出",
+            "rate": 13.5,
+            "subtotal": 20.25,
+            "tokens": 1500000
+          }
+        ],
+        "buckets": {
+          "cacheRead": {
+            "costNative": 0,
+            "tokens": 0
+          },
+          "input": {
+            "costNative": 13.5,
+            "tokens": 3000000
+          },
+          "output": {
+            "costNative": 20.25,
+            "tokens": 1500000
+          }
+        },
+        "cacheReadTokens": 0,
+        "calls": 2,
+        "cost": 33.75,
+        "costNative": 33.75,
+        "costUsd": 4.95,
+        "currency": "CNY",
+        "inputTokens": 3000000,
+        "nativeCurrency": "CNY",
+        "outputTokens": 1500000,
+        "source": "log+live",
+        "unpricedCalls": 0
+      },
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Ant Ling",
+      "id": "ant-ling",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Cerebras",
+      "id": "cerebras",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Cloudflare AI Gateway",
+      "id": "cloudflare-ai-gateway",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Cloudflare Workers AI",
+      "id": "cloudflare-workers-ai",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Fireworks",
+      "id": "fireworks",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "GitHub Copilot",
+      "id": "github-copilot",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Groq",
+      "id": "groq",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Hugging Face",
+      "id": "huggingface",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": "未配置 MOONSHOT_API_KEY：请先在 Harness 凭证中填写 Moonshot AI 的 API Key。",
+      "currency": "CNY",
+      "displayName": "Moonshot AI",
+      "id": "moonshotai",
+      "isConfiguredProvider": false,
+      "keyConfigured": false,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（USD/1M）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": "未配置 MOONSHOT_API_KEY：请先在 Harness 凭证中填写 Moonshot AI CN 的 API Key。",
+      "currency": "CNY",
+      "displayName": "Moonshot AI CN",
+      "id": "moonshotai-cn",
+      "isConfiguredProvider": false,
+      "keyConfigured": false,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（USD/1M）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "NVIDIA",
+      "id": "nvidia",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "OpenCode Zen",
+      "id": "opencode",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "OpenCode Zen Go",
+      "id": "opencode-go",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": "未配置 OPENROUTER_API_KEY：请先在 Harness 凭证中填写 OpenRouter 的 API Key。",
+      "currency": "credits",
+      "displayName": "OpenRouter",
+      "id": "openrouter",
+      "isConfiguredProvider": false,
+      "keyConfigured": false,
+      "plan": {
+        "kind": "credit",
+        "label": "按量计费 · 官方目录价格（USD/1M）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Qwen Token Plan",
+      "id": "qwen-token-plan",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Qwen Token Plan CN",
+      "id": "qwen-token-plan-cn",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Together",
+      "id": "together",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "xAI",
+      "id": "xai",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Xiaomi",
+      "id": "xiaomi",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Xiaomi Token Plan AMS",
+      "id": "xiaomi-token-plan-ams",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Xiaomi Token Plan CN",
+      "id": "xiaomi-token-plan-cn",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Xiaomi Token Plan SGP",
+      "id": "xiaomi-token-plan-sgp",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Z.AI",
+      "id": "zai",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Z.AI Coding CN",
+      "id": "zai-coding-cn",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    }
+  ],
+  "sessionId": "s1",
+  "summary": {
+    "month": {
+      "cacheReadTokens": 0,
+      "calls": 2,
+      "costUsd": 4.949999999999999,
+      "inputTokens": 3000000,
+      "native": {
+        "CNY": 33.75
+      },
+      "outputTokens": 1500000,
+      "unpricedCalls": 0
+    },
+    "today": {
+      "cacheReadTokens": 0,
+      "calls": 2,
+      "costUsd": 4.949999999999999,
+      "inputTokens": 3000000,
+      "native": {
+        "CNY": 33.75
+      },
+      "outputTokens": 1500000,
+      "unpricedCalls": 0
+    },
+    "total": {
+      "cacheReadTokens": 0,
+      "calls": 2,
+      "costUsd": 4.949999999999999,
+      "inputTokens": 3000000,
+      "native": {
+        "CNY": 33.75
+      },
+      "outputTokens": 1500000,
+      "unpricedCalls": 0
+    }
+  },
+  "unrecognized": null
+}

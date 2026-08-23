@@ -1,8 +1,8 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.4.0-informational)](#)
-[![harness](https://img.shields.io/badge/DeepSeek%20Harness-web%20plugin-6366f1)](#)
+[![version](https://img.shields.io/badge/version-0.4.1-informational)](#)
+[![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
 DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**，常驻右下角
@@ -10,6 +10,8 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 多供应商列表）。**DeepSeek 优先**，架构上为后续接入其它 API 供应商留好扩展点。
 
 [English](README.md) | 中文
+
+> 社区第三方插件，与 DeepSeek 官方无隶属关系 · Unofficial community plugin, not affiliated with or endorsed by DeepSeek.
 
 ## 功能
 
