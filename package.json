@@ -1,14 +1,20 @@
 {
   "name": "dsh-billing-glass",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Liquid-glass billing overlay for the DeepSeek Harness Web GUI: provider balances, session cost, daily spend and token buckets. DeepSeek-first with an extensible provider registry.",
   "type": "module",
   "main": "lib/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test \"tests/*.mjs\"",
     "build:client": "node scripts/build-client.js",
     "sync:providers": "node scripts/sync-providers.js",
     "sync:providers:check": "node scripts/sync-providers.js --check",
+    "check:upstream": "node scripts/check-upstream.mjs",
+    "typecheck": "tsc -p tsconfig.checkjs.json",
+    "lint": "oxlint .",
     "check:generated": "npm run build:client && npm run sync:providers:check && git diff --exit-code -- lib/client.js lib/providers/catalog.generated.js",
     "pack:check": "npm pack --dry-run"
   },
@@ -38,7 +44,10 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "0.82.1"
+    "@earendil-works/pi-ai": "0.82.1",
+    "@types/node": "^22.18.13",
+    "oxlint": "^1.15.0",
+    "typescript": "^5.9.3"
   },
   "repository": {
     "type": "git",

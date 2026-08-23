@@ -1,0 +1,63 @@
+name: Upstream watch
+
+# 上游漂移检测：每日定时（也可手动触发）。发现 Harness/pi-ai/官方价格漂移时
+# 自动创建或追加「上游漂移检测」issue；无漂移时自动关闭遗留 issue。
+# 该工作流不阻塞常规 CI——上游变更不是代码回归，只产生待办提醒。
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run upstream drift check
+        run: node scripts/check-upstream.mjs --report upstream-report.md
+
+      - name: Open or append drift issue
+        if: hashFiles('upstream-report.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if grep -q "UPSTREAM_DRIFT: [1-9]" upstream-report.md; then
+            body="$(cat upstream-report.md)"
+            existing="$(gh issue list --search "上游漂移检测 in:title state:open" --json number --jq '.[0].number' || true)"
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "$body"
+              echo "appended to existing drift issue #$existing"
+            else
+              gh issue create --title "上游漂移检测：Harness / pi-ai / 官方价格有变化" --body "$body"
+              echo "created new drift issue"
+            fi
+          else
+            existing="$(gh issue list --search "上游漂移检测 in:title state:open" --json number --jq '.[0].number' || true)"
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "本次上游检测无漂移，自动关闭。"
+              echo "closed stale drift issue #$existing"
+            else
+              echo "no drift, no open issue — nothing to do"
+            fi
+          fi
+
+      - name: Upload report artifact
+        if: always() && hashFiles('upstream-report.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-drift-report
+          path: upstream-report.md

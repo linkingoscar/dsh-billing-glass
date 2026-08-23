@@ -21,6 +21,9 @@ jobs:
       - run: node --check lib/index.js
       - run: node --check lib/client.js
       - run: node --check lib/ledger.js
+      - run: node --check lib/session-costing.js
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
 
       # 两条生成链都必须与源码一致：src/client -> lib/client.js，

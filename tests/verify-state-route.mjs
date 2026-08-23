@@ -3,16 +3,17 @@
 // DeepSeek 余额缓存 TTL 与 POST 强刷路由（不访问真实网络）。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const temp = mkdtempSync(join(tmpdir(), "dsh-billing-glass-state-"));
 process.env.DSH_HOME = temp;
 
 let fetchCalls = 0;
 let balanceTotal = 100;
-globalThis.fetch = async (url) => {
+globalThis.fetch = async (_url) => {
   fetchCalls += 1;
   const body = JSON.stringify({
     is_available: true,
@@ -113,6 +114,34 @@ test("state 路由：sessionId 驱动会话费用与活跃供应商，DeepSeek �
   assert.ok(deepseek.session.costNative > 0, "会话费用原生币种 > 0");
   assert.equal(deepseek.session.nativeCurrency, "CNY");
   assert.equal(deepseek.keyConfigured, true);
+});
+
+/** 递归键排序（golden 对比用的规范化视图）。
+ * @param {any} value
+ * @returns {any}
+ */
+function sortedKeys(value) {
+  if (Array.isArray(value)) return value.map(sortedKeys);
+  if (value !== null && typeof value === "object") {
+    /** @type {Record<string, unknown>} */
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = sortedKeys(value[key]);
+    return out;
+  }
+  return value;
+}
+
+test("state 路由 golden 快照：响应契约与基线一致（UPDATE_SNAPSHOT=1 重录）", async () => {
+  const { body } = await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
+  const normalized = sortedKeys(body);
+  const goldenPath = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "state-route.golden.json");
+  if (process.env.UPDATE_SNAPSHOT === "1" || !existsSync(goldenPath)) {
+    writeFileSync(goldenPath, JSON.stringify(normalized, null, 2) + "\n", "utf8");
+    assert.ok(true, process.env.UPDATE_SNAPSHOT === "1" ? "golden 快照已重录" : "golden 快照首次生成");
+    return;
+  }
+  const golden = JSON.parse(readFileSync(goldenPath, "utf8"));
+  assert.deepEqual(normalized, golden, "state 响应偏离 golden 基线：若为有意契约变更，请 UPDATE_SNAPSHOT=1 重录并在 PR 中肉眼审查 diff");
 });
 
 test("POST refresh-balance 绕过 DeepSeek 余额缓存，GET state 保持只读", async () => {

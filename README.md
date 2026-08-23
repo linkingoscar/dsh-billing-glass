@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.3.0-informational)](#)
+[![version](https://img.shields.io/badge/version-0.4.0-informational)](#)
 [![harness](https://img.shields.io/badge/DeepSeek%20Harness-web%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 

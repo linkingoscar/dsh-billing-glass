@@ -19,19 +19,32 @@ const srcDir = join(root, "src", "client");
 const outFile = join(root, "lib", "client.js");
 const ENTRY = "index";
 
+/**
+ * @param {string} spec
+ * @returns {string}
+ */
 function moduleIdOf(spec) {
   const resolved = resolve(srcDir, spec).replace(/\\/g, "/");
   return relative(srcDir, resolved).replace(/\.js$/, "");
 }
 
+/** @typedef {{body: string, deps: string[]}} ClientModule */
+/** @type {Map<string, ClientModule>} */
 const cache = new Map(); // id -> { body, deps }
+
+/**
+ * @param {string} id
+ * @returns {ClientModule}
+ */
 function loadModule(id) {
-  if (cache.has(id)) return cache.get(id);
+  const hit = cache.get(id);
+  if (hit !== undefined) return hit;
   const file = join(srcDir, `${id}.js`);
   const source = readFileSync(file, "utf8");
+  /** @type {string[]} */
   const deps = [];
   const importPattern = /^(\s*)import\s*\{([^}]+)\}\s*from\s*"([^"]+)";\s*$/gm;
-  const body = source.replace(importPattern, (_match, indent, names, spec) => {
+  const body = source.replace(importPattern, (/** @type {string} */ _match, /** @type {string} */ indent, /** @type {string} */ names, /** @type {string} */ spec) => {
     const depId = moduleIdOf(spec);
     deps.push(depId);
     return `${indent}const { ${names.trim()} } = __modules[${JSON.stringify(depId)}];`;
@@ -42,23 +55,28 @@ function loadModule(id) {
   return module;
 }
 
+/**
+ * @param {string} body
+ * @returns {string}
+ */
 function transformExports(body) {
+  /** @type {string[]} */
   const exported = [];
   let text = body;
-  text = text.replace(/^(\s*)export\s+async\s+function\s+([A-Za-z0-9_$]+)/gm, (_m, indent, name) => {
+  text = text.replace(/^(\s*)export\s+async\s+function\s+([A-Za-z0-9_$]+)/gm, (/** @type {string} */ _m, /** @type {string} */ indent, /** @type {string} */ name) => {
     exported.push(name);
     return `${indent}async function ${name}`;
   });
-  text = text.replace(/^(\s*)export\s+function\s+([A-Za-z0-9_$]+)/gm, (_m, indent, name) => {
+  text = text.replace(/^(\s*)export\s+function\s+([A-Za-z0-9_$]+)/gm, (/** @type {string} */ _m, /** @type {string} */ indent, /** @type {string} */ name) => {
     exported.push(name);
     return `${indent}function ${name}`;
   });
-  text = text.replace(/^(\s*)export\s+const\s+([A-Za-z0-9_$]+)\s*=/gm, (_m, indent, name) => {
+  text = text.replace(/^(\s*)export\s+const\s+([A-Za-z0-9_$]+)\s*=/gm, (/** @type {string} */ _m, /** @type {string} */ indent, /** @type {string} */ name) => {
     exported.push(name);
     return `${indent}const ${name} =`;
   });
   if (exported.length > 0) {
-    text += "\n" + exported.map((name) => `__export(${JSON.stringify(name)}, ${name});`).join("\n");
+    text += "\n" + exported.map((/** @type {string} */ name) => `__export(${JSON.stringify(name)}, ${name});`).join("\n");
   }
   return text;
 }
@@ -69,7 +87,9 @@ const seen = new Set();
 (function visit(id) {
   if (seen.has(id)) return;
   seen.add(id);
-  for (const dep of cache.get(id).deps) visit(dep);
+  const entry = cache.get(id);
+  if (entry === undefined) return;
+  for (const dep of entry.deps) visit(dep);
   ordered.push(id);
 })(ENTRY);
 
@@ -92,7 +112,9 @@ window.__ModuleLoader__.load({
 		};
 `);
 for (const id of ordered) {
-  const body = transformExports(cache.get(id).body);
+  const module = cache.get(id);
+  if (module === undefined) continue;
+  const body = transformExports(module.body);
   parts.push(`		__define(${JSON.stringify(id)}, (__exports, __export) => {\n`);
   parts.push(body);
   parts.push(`\n		});\n`);

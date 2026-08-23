@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": [
+    "src/client/**/*.js",
+    "src/client/**/*.d.ts",
+    "scripts/*.js",
+    "scripts/*.mjs",
+    "lib/index.js",
+    "lib/ledger.js",
+    "lib/session-costing.js",
+    "lib/types.js",
+    "lib/providers/deepseek.js",
+    "lib/providers/deepseek-pricing.js",
+    "lib/providers/deepseek-refresh.js",
+    "lib/providers/openai-compat.js",
+    "lib/providers/registry.js"
+  ],
+  "exclude": ["node_modules"]
+}

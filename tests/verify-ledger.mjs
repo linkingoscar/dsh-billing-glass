@@ -70,6 +70,24 @@ test("summary 今日/本月/累计聚合（USD）", () => {
   assert.equal(s.total.inputTokens, 4000);
 });
 
+test("summary 按原生币种分组合计（单币种精确展示，无需汇率）", () => {
+  const { ledger } = makeLedger();
+  const now = new Date("2026-08-14T20:00:00+08:00");
+  const close = (a, b) => Math.abs(a - b) < 1e-9;
+  // CNY 两条 + USD 一条（今天）
+  ledger.record(entry({ messageId: "a", costNative: 1.5, nativeCurrency: "CNY", costUsd: 0.21, time: Date.parse("2026-08-14T09:00:00+08:00") }));
+  ledger.record(entry({ messageId: "b", costNative: 2.5, nativeCurrency: "CNY", costUsd: 0.35, time: Date.parse("2026-08-14T15:00:00+08:00") }));
+  ledger.record(entry({ messageId: "c", costNative: 0.5, nativeCurrency: "USD", costUsd: 0.5, time: Date.parse("2026-08-14T16:00:00+08:00") }));
+
+  const s = ledger.summary(now);
+  assert.ok(close(s.today.native.CNY, 4));
+  assert.ok(close(s.today.native.USD, 0.5));
+  assert.ok(close(s.total.native.CNY, 4));
+  assert.ok(close(s.month.native.CNY, 4));
+  // 未涉及币种不出现键
+  assert.equal("EUR" in s.today.native, false);
+});
+
 test("持久化：append-only JSONL 落盘，重新加载可恢复", () => {
   const { dir, ledger } = makeLedger();
   ledger.record(entry());
