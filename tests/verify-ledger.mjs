@@ -38,6 +38,19 @@ test("record 幂等：同 sessionId+messageId 覆盖不重复", () => {
   assert.equal(messages[0].costNative, 2.5);
 });
 
+test("recordIfAbsent 冻结首次计价快照，历史回放不覆盖", () => {
+  const { ledger } = makeLedger();
+  ledger.record(entry({ costNative: 1.25, pricingSnapshot: {
+    source: "pi-ai@0.84.2", mode: "flat",
+    cny: { input: 1, cacheRead: 0.1, output: 2 },
+    usd: { input: 0.14, cacheRead: 0.014, output: 0.28 }
+  } }));
+  assert.equal(ledger.recordIfAbsent(entry({ costNative: 99 })), false);
+  const frozen = ledger.queryMessage("s1", "m1");
+  assert.equal(frozen.costNative, 1.25);
+  assert.equal(frozen.pricingSnapshot.source, "pi-ai@0.84.2");
+});
+
 test("querySession 按时间升序，queryMessage 单条查询", () => {
   const { ledger } = makeLedger();
   ledger.record(entry({ messageId: "m2", time: Date.parse("2026-08-14T12:00:00+08:00") }));

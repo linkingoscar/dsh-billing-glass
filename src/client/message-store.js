@@ -1,6 +1,7 @@
 // 逐条消息费用角标的数据源（浏览器内存 external store + 账本路由刷新）。
 /** @type {Map<string, Map<string, any>>} */
 const messageCostStore = new Map(); // sessionId -> Map<messageId, record>
+const MESSAGE_SESSION_MAX = 32;
 /** @type {Set<() => void>} */
 const listeners = new Set();
 
@@ -43,7 +44,13 @@ export async function refreshLedger(sessionId) {
 			for (const m of body.messages) {
 				if (m !== null && typeof m === "object" && typeof m.messageId === "string") map.set(m.messageId, m);
 			}
+			messageCostStore.delete(sessionId);
 			messageCostStore.set(sessionId, map);
+			while (messageCostStore.size > MESSAGE_SESSION_MAX) {
+				const oldest = messageCostStore.keys().next().value;
+				if (oldest === undefined) break;
+				messageCostStore.delete(oldest);
+			}
 			notify();
 		}
 	} catch (error) {

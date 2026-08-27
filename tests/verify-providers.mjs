@@ -126,3 +126,10 @@ test("目录血缘元数据必须真实：version/hash/generatedAt 禁止为 nul
   assert.match(PI_AI_CATALOG_META.sourceSha256, /^[a-f0-9]{64}$/, "sourceSha256 必须是 64 位 hex");
   assert.ok(Number.isFinite(Date.parse(PI_AI_CATALOG_META.generatedAt)), "generatedAt 必须是合法时间");
 });
+
+test("全零套餐目录不伪装成免费按量价格", () => {
+  const plan = matchProvider("qwen-token-plan");
+  assert.equal(plan.plan.kind, "subscription");
+  assert.equal(plan.pricingUnavailableReason, "subscription_plan");
+  assert.equal(plan.priceAt("deepseek-v4-pro", Date.now()), null);
+});

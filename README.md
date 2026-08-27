@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.4.2-informational)](#)
+[![version](https://img.shields.io/badge/version-0.5.0-informational)](#)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -59,6 +59,9 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   pre-install history) + live fallback; hosts whose persistence backend has no
   per-session raw artifacts degrade to live-only automatically. Hover ⓘ for the
   `tokens × unit price = subtotal` formula.
+- **Historical price snapshots**: the first price applied to each message is persisted
+  with its bucket subtotals and catalog source. Replaying an old session reuses that
+  snapshot, so a later catalog upgrade cannot silently rewrite historical spend.
 - **Unknown models fail closed**: a model missing from the catalog (catalog lag, alias
   rename, brand-new model) is never silently priced at zero — the message is marked
   unpriced, the card and spend stats expose `unpricedCalls: N`, and the ledger stores
@@ -81,7 +84,8 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   badge, providers without a configured key a "not configured" marker.
 - **Plan / fee system**: each provider declares its `plan` (`token` pay-as-you-go /
   `subscription`); the "plan" row shows the billing mode + the current price tier
-  (standard / peak / valley).
+  (standard / peak / valley). Catalog models whose token prices are all zero are shown
+  as subscription/quota plans and remain unpriced, never as "free" metered usage.
 - **Daily spend (official, optional)**: without `DEEPSEEK_PLATFORM_TOKEN` the row is
   hidden. With it, the card shows the exact official `consumed` value:
 

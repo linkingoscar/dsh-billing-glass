@@ -11,7 +11,7 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
  * @typedef {{id: string, displayName: string, currency: string, isConfiguredProvider?: boolean, keyConfigured?: boolean|null, refreshSupported?: boolean, plan?: {kind: string, label: string}|null, rateMode?: string|null, balance?: {total: number, granted?: number, toppedUp?: number, available?: boolean}|null, balanceError?: string|null, session?: any|null, today?: {consumed: number, source: string}|null}} ProviderRow
  */
 /** state 路由响应体（本插件使用面）。
- * @typedef {{ok: true, sessionId?: string, activeProvider?: string|null, activeModel?: string|null, configuredProvider?: string|null, configuredModel?: string|null, unrecognized?: {provider: string|null, baseUrl: string|null, model: string|null}|null, fxCnyPerUsd?: number, summary?: {today: SummaryBucketView, month: SummaryBucketView, total: SummaryBucketView}|null, ledgerHealth?: {degraded?: boolean, invalidLines?: number, recoveredTail?: number}|null, providers?: ProviderRow[]}} BillingState
+ * @typedef {{ok: true, sessionId?: string, activeProvider?: string|null, activeModel?: string|null, configuredProvider?: string|null, configuredModel?: string|null, unrecognized?: {provider: string|null, baseUrl: string|null, model: string|null}|null, fxCnyPerUsd?: number, summary?: {today: SummaryBucketView, month: SummaryBucketView, total: SummaryBucketView}|null, ledgerHealth?: {degraded?: boolean, invalidLines?: number, recoveredTail?: number}|null, pricingCatalog?: {source:string,version:string}|null, providers?: ProviderRow[]}} BillingState
  */
 /** 消费统计桶（客户端视图：原生分组 + USD 基准）。
  * @typedef {{costUsd?: number, native?: Record<string, number>, calls?: number, unpricedCalls?: number, inputTokens?: number, cacheReadTokens?: number, outputTokens?: number}} SummaryBucketView
@@ -722,7 +722,7 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
 															borderTop: "1px solid color-mix(in srgb, #ffffff 10%, transparent)",
 															paddingTop: 4, marginTop: 2
 														},
-														children: "按消息时刻官方价格表计价（含峰谷）"
+														children: "本地估算；已落账消息固定采用首次计价快照"
 													})
 												]
 											})
@@ -917,7 +917,7 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
 											children: [
 												jsx("span", { children: `更新于 ${formatTime(updatedAt)}` }),
 												jsx("span", { children: "·" }),
-												jsx("span", { children: "整卡可拖动 · 点击折叠" })
+												jsx("span", { children: `本地估算 · ${state?.pricingCatalog?.source ?? "catalog"}@${state?.pricingCatalog?.version ?? "?"}` })
 											]
 										})
 										: null
@@ -927,4 +927,3 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
 				})
 			});
 		}
-

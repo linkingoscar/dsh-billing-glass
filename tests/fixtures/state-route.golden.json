@@ -12,6 +12,10 @@
     "recoveredTail": 0
   },
   "ok": true,
+  "pricingCatalog": {
+    "source": "pi-ai",
+    "version": "0.84.2"
+  },
   "providers": [
     {
       "balance": {
@@ -345,8 +349,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -362,8 +366,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -379,8 +383,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -447,8 +451,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -464,8 +468,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -481,8 +485,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -498,8 +502,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -515,8 +519,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+        "kind": "subscription",
+        "label": "套餐额度 · 无可换算的按量价格"
       },
       "rateMode": null,
       "refreshSupported": false,
