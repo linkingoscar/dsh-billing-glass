@@ -27,7 +27,7 @@ globalThis.fetch = async (_url) => {
   };
 };
 
-const { apply } = await import("../lib/index.js");
+const { apply, rejectUnauthorizedRequest } = await import("../lib/index.js");
 
 const routes = new Map();
 let sessionHandler = null;
@@ -183,6 +183,16 @@ test("state 路由：未传 sessionId 时回退后台配置供应商", async () 
   const { body } = await request(stateHandler, "/api/billing-glass/state");
   assert.equal(body.activeProvider, null);
   assert.equal(body.configuredProvider, "deepseek");
+});
+
+test("v0.1.2 connection 拒绝策略保护插件精确路由，v0.1.1 缺失时兼容放行", () => {
+  let status = null;
+  let body = "";
+  const res = { writeHead(value) { status = value; }, end(value) { body = String(value); } };
+  assert.equal(rejectUnauthorizedRequest({ get: () => ({ requestRejection: () => 401 }) }, {}, res), true);
+  assert.equal(status, 401);
+  assert.equal(JSON.parse(body).error, "unauthorized");
+  assert.equal(rejectUnauthorizedRequest({ get: () => undefined }, {}, res), false);
 });
 
 test("清理临时目录", () => {

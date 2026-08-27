@@ -9,7 +9,8 @@
  *
  * 用法：
  *   node scripts/sync-providers.js [--pi-ai-dir <path/to/pi-ai/dist/providers/data>] [--check]
- * 数据源探测顺序：--pi-ai-dir > 本地 Harness 安装 > 插件自身 devDep（见 findSource）。
+ * 数据源探测顺序：--pi-ai-dir > DSH_HARNESS_NODE_MODULES 显式宿主 > 插件自身
+ * 锁定 devDep > 默认本地 Harness 安装（见 findSource）。
  * 默认自动探测；`buildCatalogFromData` 同时导出给 scripts/check-upstream.mjs 复用。
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
@@ -25,8 +26,8 @@ const CHECK_MODE = process.argv.includes("--check");
 
 /**
  * 定位 pi-ai 数据目录与包根目录（用于记录 version + source hash 血缘）。
- * 探测顺序：显式 --pi-ai-dir > 本地 Harness 安装（与宿主实际捆绑版本一致）
- * > 插件自身 devDep。返回值带 sourceKind 供数据血缘记录。
+ * 探测顺序优先可复现的锁定 devDep；只有显式指定宿主 node_modules 时才覆盖它。
+ * 默认本地 Harness 安装仅作无 devDep 环境的最后回退。
  */
 export function findSource(argv = process.argv) {
   const argIndex = argv.indexOf("--pi-ai-dir");
@@ -34,13 +35,10 @@ export function findSource(argv = process.argv) {
     const dataDir = resolve(argv[argIndex + 1]);
     return { dataDir, packageDir: resolve(dataDir, "../../.."), sourceKind: "explicit-arg" };
   }
-  // 本地 Harness 安装优先：与 dsh 实际捆绑的 pi-ai 完全一致，
-  // 避免 devDep 版本漂移导致"插件列表 ≠ Harness 设置页列表"。
   const candidates = [];
   if (process.env.DSH_HARNESS_NODE_MODULES) {
     candidates.push(join(process.env.DSH_HARNESS_NODE_MODULES, "@earendil-works", "pi-ai"));
   }
-  candidates.push(join(homedir(), ".dsh", "profiles", "node_modules", "@earendil-works", "pi-ai"));
   for (const packageDir of candidates) {
     const dataDir = join(packageDir, "dist", "providers", "data");
     if (existsSync(dataDir)) return { dataDir, packageDir, sourceKind: "harness-install" };
@@ -51,6 +49,9 @@ export function findSource(argv = process.argv) {
     const dataDir = join(packageDir, "dist", "providers", "data");
     if (existsSync(dataDir)) return { dataDir, packageDir, sourceKind: "dev-dependency" };
   } catch { /* ignore */ }
+  const packageDir = join(homedir(), ".dsh", "profiles", "node_modules", "@earendil-works", "pi-ai");
+  const dataDir = join(packageDir, "dist", "providers", "data");
+  if (existsSync(dataDir)) return { dataDir, packageDir, sourceKind: "harness-install" };
   return null;
 }
 

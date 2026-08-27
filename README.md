@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.4.1-informational)](#)
+[![version](https://img.shields.io/badge/version-0.4.2-informational)](#)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -171,9 +171,9 @@ reuses that key; nothing leaves your machine).
 
 ## Security / trust boundary
 
-- The plugin performs **no caller authentication**; it assumes the harness `webServer` is
-  localhost-bound or sits behind host-provided auth middleware. If the host exposes the
-  web server publicly, add authentication at the host layer.
+- On dsh v0.1.2+, every plugin route reuses the host connection's launch-token and
+  Host/Origin checks. On v0.1.1 the compatibility fallback retains the legacy trust
+  boundary, so keep the harness `webServer` localhost-bound or behind host auth.
 - `GET /api/billing-glass/state` and `GET /api/billing-glass/ledger` are read-only
   (balance/today external fetches are TTL-cached, so UI polling cannot amplify them).
 - Side-effecting routes are **POST**: `/api/billing-glass/refresh-balance` (force-refresh
@@ -186,7 +186,7 @@ reuses that key; nothing leaves your machine).
 
 **Built-in scope matches the harness official provider list exactly (no setup):**
 
-- The registry ships **25 providers** (`lib/providers/catalog.generated.js`), generated
+- The registry ships **27 providers** (`lib/providers/catalog.generated.js`), generated
   by `scripts/sync-providers.js` from the harness's built-in pi-ai official catalog —
   names, baseURLs and per-model official prices (USD/1M) all match the provider list in
   the harness model settings. Whichever provider is chosen in Settings → Models or used

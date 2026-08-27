@@ -2,7 +2,7 @@
  * 上游漂移检测（无第三方依赖，可本地跑也可在 CI 定时跑）。
  *
  * 监控三类漂移，任一发生即写入报告并输出 `UPSTREAM_DRIFT: <n>` 标记：
- *  1. pi-ai 版本漂移：dsh 最新 release 的 llm-pi-ai 所需版本 vs 插件 devDep；
+ *  1. pi-ai 版本漂移：dsh 最新 release lockfile 的实际解析版本 vs 插件 devDep；
  *  2. 目录内容漂移：用上游版本的 pi-ai 数据重建目录 vs 已提交 catalog；
  *  3. DeepSeek 价格政策漂移：官方定价页 vs 内置政策链。
  *
@@ -238,10 +238,15 @@ async function checkPiAiVersionDrift() {
   const range = manifest?.dependencies?.[PI_AI_PACKAGE];
   if (typeof range !== "string" || range === "") throw new Error("harness llm-pi-ai has no pi-ai dependency");
 
-  const registry = await fetchJson(`https://registry.npmjs.org/${PI_AI_PACKAGE}`);
-  const versions = Object.keys(registry.versions ?? {}).filter((/** @type {string} */ v) => satisfiesRange(v, range));
-  if (versions.length === 0) throw new Error(`no published version satisfies harness range ${range}`);
-  // 取满足区间的最新版本（语义化比较；parseVersion 已保证非 null）
+  // 版本范围会随 npm 新发布继续漂移；release 的真实依赖应以该 tag 的 lockfile 为准。
+  const lockfile = await fetchText(
+    `https://raw.githubusercontent.com/${GITHUB_REPO}/${encodeURIComponent(tag)}/pnpm-lock.yaml`
+  );
+  const packagePattern = PI_AI_PACKAGE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const versions = [...lockfile.matchAll(new RegExp(`^\\s{2}'${packagePattern}@(\\d+\\.\\d+\\.\\d+)':\\s*$`, "gm"))]
+    .map((match) => match[1])
+    .filter((version) => satisfiesRange(version, range));
+  if (versions.length === 0) throw new Error(`tag ${tag} lockfile has no ${PI_AI_PACKAGE} version satisfying ${range}`);
   versions.sort((a, b) => {
     const pa = /** @type {[number, number, number]} */ (parseVersion(a));
     const pb = /** @type {[number, number, number]} */ (parseVersion(b));
@@ -257,7 +262,7 @@ async function checkPiAiVersionDrift() {
   if (normalize(pinned) !== upstreamVersion) {
     driftItems.push({
       kind: "pi-ai 版本",
-      detail: `Harness ${tag} 需要 ${PI_AI_PACKAGE}@${range}（解析为 ${upstreamVersion}），插件 devDep 锁定 ${pinned}。请升级 devDep 并重跑 \`node scripts/sync-providers.js\` 同步目录。`
+      detail: `Harness ${tag} 需要 ${PI_AI_PACKAGE}@${range}（lockfile 解析为 ${upstreamVersion}），插件 devDep 锁定 ${pinned}。请升级 devDep 并重跑 \`node scripts/sync-providers.js\` 同步目录。`
     });
   }
   return { tag, range, upstreamVersion, pinned };
@@ -339,7 +344,7 @@ function renderReport(meta) {
   lines.push("# 上游漂移检测报告");
   lines.push("");
   lines.push(`- 运行时间：${new Date().toISOString()}`);
-  if (meta?.tag !== undefined) lines.push(`- Harness 最新 release：\`${meta.tag}\`（pi-ai 需求 \`${meta.range}\` → ${meta.upstreamVersion}；插件锁定 \`${meta.pinned}\`）`);
+  if (meta?.tag !== undefined) lines.push(`- Harness 最新 release：\`${meta.tag}\`（pi-ai 需求 \`${meta.range}\`，lockfile → ${meta.upstreamVersion}；插件锁定 \`${meta.pinned}\`）`);
   lines.push("");
   if (driftItems.length === 0) {
     lines.push("✅ 无漂移：pi-ai 版本、目录内容、DeepSeek 价格政策均与上游一致。");

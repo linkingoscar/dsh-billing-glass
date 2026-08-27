@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-28
+
+### Changed
+- 适配 DeepSeek Harness `dsh-v0.1.2-alpha.1`：精确 `/api` 路由在新宿主上复用
+  connection 的 launch-token 与 Host/Origin 拒绝策略，同时保留 v0.1.1 兼容。
+- pi-ai 快照升级到 Harness lockfile 实际解析的 `0.84.2`，目录更新为 27 家供应商；
+  上游检查器不再把 semver 区间内后来发布的版本误当作 release 的锁定版本。
+
 ## [0.4.1] - 2026-08-23
 
 ### Added

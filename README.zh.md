@@ -1,7 +1,7 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.4.1-informational)](#)
+[![version](https://img.shields.io/badge/version-0.4.2-informational)](#)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -154,8 +154,9 @@ dsh plugin --profile web add link:$(pwd)
 
 ## 安全与信任边界
 
-- 插件自身**不做调用方认证**，假设 Harness 的 `webServer` 已绑定本机或已有认证中间件；
-  如果宿主把 webServer 暴露到公网，请在宿主层加认证。
+- dsh v0.1.2+ 下所有插件路由复用宿主连接的 launch-token 与 Host/Origin 校验；
+  v0.1.1 兼容回退仍沿用旧信任边界，因此应让 Harness `webServer` 仅绑定本机或置于
+  宿主认证之后。
 - `GET /api/billing-glass/state` 与 `GET /api/billing-glass/ledger` 只读
   （余额/今日消费的外部请求有 TTL 缓存，不会被 UI 轮询无限放大）。
 - 有副作用的路由是 **POST**：`/api/billing-glass/refresh-balance`（强刷供应商余额）
@@ -167,7 +168,7 @@ dsh plugin --profile web add link:$(pwd)
 
 **预置范围与 Harness 官方提供方列表完全对齐（无感）：**
 
-- 注册表内置 **25 家供应商**（`lib/providers/catalog.generated.js`），由
+- 注册表内置 **27 家供应商**（`lib/providers/catalog.generated.js`），由
   `scripts/sync-providers.js` 从 Harness 内置的 pi-ai 官方目录自动生成——
   名称、baseURL、每个模型的官方价格（USD/1M）都与 Harness 模型配置后台
   的提供方列表一致。在设置 → 模型 里选了谁、会话用了谁，悬浮卡自动切换。

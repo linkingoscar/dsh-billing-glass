@@ -102,6 +102,23 @@
       "balance": null,
       "balanceError": null,
       "currency": "USD",
+      "displayName": "Baseten",
+      "id": "baseten",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
       "displayName": "Cerebras",
       "id": "cerebras",
       "isConfiguredProvider": false,
@@ -289,7 +306,7 @@
       "balance": null,
       "balanceError": null,
       "currency": "USD",
-      "displayName": "OpenCode Zen Go",
+      "displayName": "OpenCode Go",
       "id": "opencode-go",
       "isConfiguredProvider": false,
       "keyConfigured": null,
@@ -342,6 +359,23 @@
       "currency": "USD",
       "displayName": "Qwen Token Plan CN",
       "id": "qwen-token-plan-cn",
+      "isConfiguredProvider": false,
+      "keyConfigured": null,
+      "plan": {
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
+      },
+      "rateMode": null,
+      "refreshSupported": false,
+      "session": null,
+      "today": null
+    },
+    {
+      "balance": null,
+      "balanceError": null,
+      "currency": "USD",
+      "displayName": "Qwen Token Plan Individual",
+      "id": "qwen-token-plan-individual",
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
