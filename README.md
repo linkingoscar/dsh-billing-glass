@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.0-informational)](#)
+[![version](https://img.shields.io/badge/version-0.5.1-informational)](https://github.com/linkingoscar/dsh-billing-glass/releases/tag/v0.5.1)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -58,7 +58,9 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   and are merged with messageId dedupe; full persistent-log replay (including
   pre-install history) + live fallback. Harness v0.1.3+ uses read-only SessionHandles
   and revision caching; older hosts retain raw-log replay. Backends exposing neither
-  read handles nor per-session raw artifacts degrade to live-only. Hover ⓘ for the
+  read handles nor per-session raw artifacts degrade to live-only. Historical requests
+  also restore the session's provider and model badge after a host restart; new live
+  requests take precedence. Hover ⓘ for the
   `tokens × unit price = subtotal` formula.
 - **Historical price snapshots**: the first price applied to each message is persisted
   with its bucket subtotals and catalog source. Replaying an old session reuses that

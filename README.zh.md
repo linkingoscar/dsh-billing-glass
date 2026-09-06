@@ -1,7 +1,7 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.0-informational)](#)
+[![version](https://img.shields.io/badge/version-0.5.1-informational)](https://github.com/linkingoscar/dsh-billing-glass/releases/tag/v0.5.1)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -51,7 +51,8 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   （header > source，按 messageId 去重合并）。持久化日志全量回放（包含安装前
   的历史）+ 实时账本兜底；Harness v0.1.3+ 使用只读 SessionHandle 与 revision
   缓存，旧宿主保留原始日志回放；既无读取句柄也无逐会话原始工件时降级为
-  实时账本。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
+  实时账本。重启宿主后也会从历史请求恢复会话供应商与模型标签，新的实时请求
+  优先。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
 - **历史价格快照**：每条消息首次计价时持久化单价、三类 token 小计与目录来源；
   以后回放旧会话复用原快照，升级价格目录不会静默改写历史消费。
 - **未知模型 fail closed**：目录里没有的模型（catalog 落后、alias 改名、新模型）
