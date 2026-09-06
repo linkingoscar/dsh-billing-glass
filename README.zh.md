@@ -49,7 +49,8 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   （Harness v0.1.1-rc.1 起提供）与 v4-flash 同价同峰谷（图片按尺寸折算
   token 计费）；live/replay 走统一 canonical attribution
   （header > source，按 messageId 去重合并）。持久化日志全量回放（包含安装前
-  的历史）+ 实时账本兜底；宿主持久层不支持逐会话原始工件时自动降级为
+  的历史）+ 实时账本兜底；Harness v0.1.3+ 使用只读 SessionHandle 与 revision
+  缓存，旧宿主保留原始日志回放；既无读取句柄也无逐会话原始工件时降级为
   实时账本。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
 - **历史价格快照**：每条消息首次计价时持久化单价、三类 token 小计与目录来源；
   以后回放旧会话复用原快照，升级价格目录不会静默改写历史消费。

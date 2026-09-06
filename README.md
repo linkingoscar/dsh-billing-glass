@@ -56,8 +56,9 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   v0.1.1-rc.1) is priced exactly like v4-flash (images are billed as size-converted
   tokens). Live and replay share one canonical attribution pipeline (header > source)
   and are merged with messageId dedupe; full persistent-log replay (including
-  pre-install history) + live fallback; hosts whose persistence backend has no
-  per-session raw artifacts degrade to live-only automatically. Hover ⓘ for the
+  pre-install history) + live fallback. Harness v0.1.3+ uses read-only SessionHandles
+  and revision caching; older hosts retain raw-log replay. Backends exposing neither
+  read handles nor per-session raw artifacts degrade to live-only. Hover ⓘ for the
   `tokens × unit price = subtotal` formula.
 - **Historical price snapshots**: the first price applied to each message is persisted
   with its bucket subtotals and catalog source. Replaying an old session reuses that
