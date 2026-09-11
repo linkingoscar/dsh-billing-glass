@@ -161,22 +161,22 @@ test("state 路由：未知模型 fail closed，计入 unpricedCalls 而不是 0
   sessionHandler({ id: "s1" }, {
     type: "request/header",
     time: Date.now(),
-    data: { header: { config: { provider: "xai", model: "brand-new-model" } } }
+    data: { header: { config: { provider: "groq", model: "brand-new-model" } } }
   });
   sessionHandler({ id: "s1" }, {
     type: "assistant/message",
     time: Date.now(),
     data: {
-      message: { id: "m3", source: { provider: "xai", model: "brand-new-model" } },
+      message: { id: "m3", source: { provider: "groq", model: "brand-new-model" } },
       usage: { inputTokens: 1000, cacheReadTokens: 0, outputTokens: 100 }
     }
   });
   const { body } = await request(stateHandler, "/api/billing-glass/state?sessionId=s1");
-  const xai = body.providers.find((p) => p.id === "xai");
-  assert.ok(xai, "xai provider 行存在");
-  assert.equal(xai.session.unpricedCalls, 1);
-  assert.equal(xai.session.costNative, 0);
-  assert.equal(xai.session.costUsd, 0);
+  const groq = body.providers.find((p) => p.id === "groq");
+  assert.ok(groq, "groq provider 行存在");
+  assert.equal(groq.session.unpricedCalls, 1);
+  assert.equal(groq.session.costNative, 0);
+  assert.equal(groq.session.costUsd, 0);
 });
 
 test("state 路由：未传 sessionId 时回退后台配置供应商", async () => {

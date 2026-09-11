@@ -27,7 +27,8 @@ function harness(t) {
   let listener;
   const model = {
     revision: "r1", events: [header, message("m1")], missing: false,
-    failure: null, opened: 0, closed: 0, reads: 0
+    failure: null, opened: 0, closed: 0, reads: 0,
+    readFormat: process.env.DSH_HARNESS_READ_FORMAT ?? "slice"
   };
   const persistence = {
     // A backend may expose this legacy flag during migration. Handles take precedence.
@@ -46,7 +47,8 @@ function harness(t) {
         async read() {
           model.reads++;
           if (model.failure === "read") throw new Error("read failed");
-          return model.events;
+          if (model.readFormat === "invalid") return { eventState: "detached" };
+          return model.readFormat === "array" ? model.events : { eventState: "detached", events: model.events };
         },
         async close() {
           model.closed++;
@@ -146,6 +148,25 @@ test("SessionHandle: missing session does not open a handle", async (t) => {
   assert.equal(h.model.opened, 0);
   h.model.missing = false;
   assert.equal((await h.state())?.calls, 1);
+});
+
+test("SessionHandle: legacy array reads remain supported", async (t) => {
+  const h = harness(t);
+  h.model.readFormat = "array";
+  const state = await h.state(true);
+  assert.equal(state.providers.find(row => row.id === "deepseek").session.calls, 1);
+  assert.equal(state.activeModel, "deepseek-v4-pro");
+  assert.equal(h.model.closed, 1);
+});
+
+test("SessionHandle: invalid slice closes the handle and does not cache a failed replay", async (t) => {
+  const h = harness(t);
+  h.model.readFormat = "invalid";
+  assert.equal(await h.state(), null);
+  assert.equal(h.model.closed, 1);
+  h.model.readFormat = "slice";
+  assert.equal((await h.state()).calls, 1);
+  assert.equal(h.model.closed, 2);
 });
 
 test("SessionHandle: failures preserve live costing, close acquired handles, and permit retry", async (t) => {

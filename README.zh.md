@@ -1,7 +1,7 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.1-informational)](https://github.com/linkingoscar/dsh-billing-glass/releases/tag/v0.5.1)
+[![version](https://img.shields.io/badge/version-0.5.2-informational)](CHANGELOG.md)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -45,12 +45,13 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   聚合基准，展示层按 `costNative + nativeCurrency` 显示，不再用含义模糊的
   单字段 `cost`。
 - **会话费用**：对每条 `assistant/message` 按官方价格政策（带有效期，含
-  2026-08-17 峰谷）计价；视觉实验模型 `deepseek-v4-flash-vision-exp`
-  （Harness v0.1.1-rc.1 起提供）与 v4-flash 同价同峰谷（图片按尺寸折算
-  token 计费）；live/replay 走统一 canonical attribution
+  2026-09-10 12:00 北京时间 V4.1 Flash 调价）计价；`deepseek-flash` 和两个
+  旧 Flash 名称从该时刻起使用新峰谷价，之前的调用保留历史政策，Pro 价格不变。
+  live/replay 走统一 canonical attribution
   （header > source，按 messageId 去重合并）。持久化日志全量回放（包含安装前
   的历史）+ 实时账本兜底；Harness v0.1.3+ 使用只读 SessionHandle 与 revision
-  缓存，旧宿主保留原始日志回放；既无读取句柄也无逐会话原始工件时降级为
+  缓存，兼容 v0.1.5 的 `{eventState, events}` 读取结果；旧宿主保留原始日志回放。
+  既无读取句柄也无逐会话原始工件时降级为
   实时账本。重启宿主后也会从历史请求恢复会话供应商与模型标签，新的实时请求
   优先。悬停 ⓘ 显示「tokens × 单价 = 小计」公式。
 - **历史价格快照**：每条消息首次计价时持久化单价、三类 token 小计与目录来源；
@@ -64,11 +65,11 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   **当前显示的那家供应商**的官方定价源，验证计费体系是否最新（不批量刷新，
   避免对多家官网同时请求）：
   - DeepSeek：拉官方定价页（api-docs.deepseek.com）解析峰谷矩阵
-    （flash / pro / vision-exp 三列），与内置政策链逐项对比 →
+    （按实际模型列顺序解析，兼容新版两列与旧版三列），与当前政策逐项对比 →
     ✅ 已同步 / ⚠ 发现差异（列明细，页面快照落盘到
     `storages/billing-glass-pricing-snapshot.html` 供助手分析）/ 无法解析（页面
     改版，引导对话求助手）。60 秒防抖。
-  - 官方目录供应商（其余 24 家）：提示价格随 Harness 官方目录同步
+  - 官方目录供应商（其余 25 家）：提示价格随 Harness 官方目录同步
     （`scripts/sync-providers.js`），需要立即核对时引导对话求助手。
 - **多供应商自动切换**：卡片自动跟随**当前正在使用的供应商**——
   会话最近请求的 provider（`request/header`）> Harness 后台配置的现行供应商
@@ -173,7 +174,7 @@ dsh plugin --profile web add link:$(pwd)
 
 **预置范围与 Harness 官方提供方列表完全对齐（无感）：**
 
-- 注册表内置 **27 家供应商**（`lib/providers/catalog.generated.js`），由
+- 注册表内置 **26 家供应商**（`lib/providers/catalog.generated.js`），由
   `scripts/sync-providers.js` 从 Harness 内置的 pi-ai 官方目录自动生成——
   名称、baseURL、每个模型的官方价格（USD/1M）都与 Harness 模型配置后台
   的提供方列表一致。在设置 → 模型 里选了谁、会话用了谁，悬浮卡自动切换。

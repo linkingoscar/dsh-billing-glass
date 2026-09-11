@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const root = resolve(process.argv[2] ?? "");
 const tag = process.argv[3] ?? "unknown";
@@ -46,4 +47,15 @@ const checks = [
 ];
 const missing = checks.filter(([pattern, path]) => !has(pattern, path)).map(([pattern, path]) => `${pattern} (${path})`);
 if (missing.length > 0) throw new Error(`${tag} 缺少插件依赖契约: ${missing.join(", ")}`);
-console.log(`${tag}: billing source anchors present (${checks.length}, ${handles ? "SessionHandle" : "legacy raw log"}); run behavioral tests separately`);
+console.log(`${tag}: billing source anchors present (${checks.length}, ${handles ? "SessionHandle; checking read behavior next" : "legacy raw log"})`);
+if (handles) {
+  const handlePath = "packages/session/session-persistence/src/handle.ts";
+  const source = execFileSync("git", ["-C", root, "show", `${ref}:${handlePath}`], { encoding: "utf8" });
+  const result = /\bread\([^\n]+\): Promise<([^\n]+)>/.exec(source)?.[1];
+  const format = result === "readonly SessionEvent[]" ? "array"
+    : result === "SessionHandleReadResult" && source.includes("readonly events: readonly SessionEvent[]") ? "slice" : null;
+  if (format === null) throw new Error(`${tag}: unrecognized SessionHandle.read result: ${result}`);
+  execFileSync(process.execPath, ["--test", fileURLToPath(new URL("../tests/verify-session-handles.mjs", import.meta.url))], {
+    stdio: "inherit", env: { ...process.env, DSH_HARNESS_READ_FORMAT: format }
+  });
+}

@@ -51,7 +51,8 @@ const UPDATE_BASELINE = process.argv.includes("--update-baseline");
  */
 const CONTRACT_SENTINELS = [
   { key: "known-event-types", path: "packages/core/session/src/known-event-types.ts", label: "事件词汇表（回放依赖的事件全集）" },
-  { key: "persistence-readme", path: "packages/session/session-persistence/README.md", label: "持久化契约（readRaw/supportsRawArtifacts）" },
+  { key: "persistence-readme", path: "packages/session/session-persistence/README.md", label: "持久化契约与回放语义" },
+  { key: "session-handle", path: "packages/session/session-persistence/src/handle.ts", label: "SessionHandle 读取结果与释放契约" },
   { key: "llm-types", path: "packages/llm/llm/src/types.ts", label: "TokenUsage / LLM 契约形状" },
   { key: "deepseek-readme", path: "packages/llm/llm-deepseek/README.md", label: "deepseek-official 路由与模型目录语义" }
 ];

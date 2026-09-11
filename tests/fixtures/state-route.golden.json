@@ -3,7 +3,7 @@
   "activeProvider": "deepseek",
   "configuredModel": "deepseek-v4-pro",
   "configuredProvider": "deepseek",
-  "fxCnyPerUsd": 6.8182,
+  "fxCnyPerUsd": 6.6667,
   "ledgerHealth": {
     "degraded": false,
     "invalidLines": 0,
@@ -14,7 +14,7 @@
   "ok": true,
   "pricingCatalog": {
     "source": "pi-ai",
-    "version": "0.84.2"
+    "version": "0.85.1"
   },
   "providers": [
     {
@@ -412,23 +412,6 @@
       "balance": null,
       "balanceError": null,
       "currency": "USD",
-      "displayName": "xAI",
-      "id": "xai",
-      "isConfiguredProvider": false,
-      "keyConfigured": null,
-      "plan": {
-        "kind": "token",
-        "label": "按量计费 · 官方目录价格（无公开余额接口）"
-      },
-      "rateMode": null,
-      "refreshSupported": false,
-      "session": null,
-      "today": null
-    },
-    {
-      "balance": null,
-      "balanceError": null,
-      "currency": "USD",
       "displayName": "Xiaomi",
       "id": "xiaomi",
       "isConfiguredProvider": false,
@@ -502,8 +485,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "subscription",
-        "label": "套餐额度 · 无可换算的按量价格"
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
       },
       "rateMode": null,
       "refreshSupported": false,
@@ -519,8 +502,8 @@
       "isConfiguredProvider": false,
       "keyConfigured": null,
       "plan": {
-        "kind": "subscription",
-        "label": "套餐额度 · 无可换算的按量价格"
+        "kind": "token",
+        "label": "按量计费 · 官方目录价格（无公开余额接口）"
       },
       "rateMode": null,
       "refreshSupported": false,

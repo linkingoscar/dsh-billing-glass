@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.1-informational)](https://github.com/linkingoscar/dsh-billing-glass/releases/tag/v0.5.1)
+[![version](https://img.shields.io/badge/version-0.5.2-informational)](CHANGELOG.md)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -51,13 +51,14 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   the only aggregation base; display uses `costNative + nativeCurrency` — the ambiguous
   single `cost` field is gone.
 - **Session cost**: every `assistant/message` is priced against the official price
-  policy (validity windows included, plus the 2026-08-17 peak/valley schedule). The
-  experimental vision model `deepseek-v4-flash-vision-exp` (shipped in Harness
-  v0.1.1-rc.1) is priced exactly like v4-flash (images are billed as size-converted
-  tokens). Live and replay share one canonical attribution pipeline (header > source)
+  policy, including the September 10, 2026 04:00 UTC V4.1 Flash price change.
+  `deepseek-flash` and the two legacy Flash names use the new peak/valley prices
+  from that instant; earlier calls retain their historical policy. Pro prices remain
+  unchanged. Live and replay share one canonical attribution pipeline (header > source)
   and are merged with messageId dedupe; full persistent-log replay (including
   pre-install history) + live fallback. Harness v0.1.3+ uses read-only SessionHandles
-  and revision caching; older hosts retain raw-log replay. Backends exposing neither
+  and revision caching, including the `{eventState, events}` result in v0.1.5;
+  older hosts retain raw-log replay. Backends exposing neither
   read handles nor per-session raw artifacts degrade to live-only. Historical requests
   also restore the session's provider and model badge after a host restart; new live
   requests take precedence. Hover ⓘ for the
@@ -193,7 +194,7 @@ reuses that key; nothing leaves your machine).
 
 **Built-in scope matches the harness official provider list exactly (no setup):**
 
-- The registry ships **27 providers** (`lib/providers/catalog.generated.js`), generated
+- The registry ships **26 providers** (`lib/providers/catalog.generated.js`), generated
   by `scripts/sync-providers.js` from the harness's built-in pi-ai official catalog —
   names, baseURLs and per-model official prices (USD/1M) all match the provider list in
   the harness model settings. Whichever provider is chosen in Settings → Models or used

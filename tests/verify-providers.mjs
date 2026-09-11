@@ -11,7 +11,7 @@ test("注册表 = DeepSeek 专用 + 官方目录预置供应商（对齐 Harness
   assert.ok(ids.includes("moonshotai-cn"));
   assert.ok(ids.includes("moonshotai"));
   assert.ok(ids.includes("openrouter"));
-  assert.ok(ids.includes("xai"));
+  assert.ok(!ids.includes("xai"), "removed upstream provider is no longer a preset");
   assert.ok(ids.includes("groq"));
   assert.ok(ids.length >= 20, `官方目录预置应不少于 20 家，实际 ${ids.length}`);
   // 不在官方目录的供应商不应出现在预置里
@@ -47,10 +47,10 @@ test("预置供应商有完整契约（计价、套餐；余额按适配器可�
 });
 
 test("官方目录计价：USD 供应商 costNative === costUsd === 目录价", () => {
-  const provider = matchProvider("pi-ai", "https://api.x.ai/v1");
-  assert.equal(provider.id, "xai");
+  const provider = matchProvider("pi-ai", "https://api.groq.com/openai/v1");
+  assert.equal(provider.id, "groq");
   assert.equal(provider.currency, "USD");
-  const unit = provider.priceAt("grok-4.3", Date.now());
+  const unit = provider.priceAt("llama-3.3-70b-versatile", Date.now());
   assert.equal(unit.mode, "flat");
   const catalogInput = unit.usd.input;
   assert.ok(catalogInput > 0, "目录价应大于 0");
@@ -108,14 +108,14 @@ test("含 / 的 catalog id 不做 basename 猜测：bar/model-x 不会按唯一�
 });
 
 test("不含 / 的 catalog id 仍可兼容 vendor 前缀 alias", () => {
-  const xai = PROVIDERS.find((p) => p.id === "xai");
-  assert.ok(xai.priceAt("xai/grok-4.3", Date.now()) !== null, "xai/grok-4.3 命中 grok-4.3");
+  const groq = PROVIDERS.find((p) => p.id === "groq");
+  assert.ok(groq.priceAt("groq/llama-3.3-70b-versatile", Date.now()) !== null, "groq/llama-3.3-70b-versatile 命中 llama-3.3-70b-versatile");
 });
 
 test("有余额适配器的供应商 keyRef 正确；其余家余额返回 null 不抛错", async () => {
   const withBalance = matchProvider("pi-ai", "https://openrouter.ai/api/v1");
   assert.equal(withBalance.keyRef, "OPENROUTER_API_KEY");
-  const noBalance = matchProvider("pi-ai", "https://api.x.ai/v1");
+  const noBalance = matchProvider("pi-ai", "https://api.groq.com/openai/v1");
   assert.equal(await noBalance.fetchBalance({}), null, "无公开余额接口的供应商返回 null");
 });
 

@@ -8,7 +8,7 @@ import { deepseek } from "../lib/providers/deepseek.js";
 test("source/header 冲突：header provider/model 优先", () => {
   const context = resolveMessageContext({
     type: "assistant/message",
-    data: { message: { id: "m1", source: { provider: "xai", model: "grok-4.3" } }, usage: { inputTokens: 1 } }
+    data: { message: { id: "m1", source: { provider: "groq", model: "llama-3.3-70b-versatile" } }, usage: { inputTokens: 1 } }
   }, { provider: "deepseek-official", model: "deepseek-v4-flash" });
   assert.equal(context.provider.id, "deepseek");
   assert.equal(context.model, "deepseek-v4-flash");

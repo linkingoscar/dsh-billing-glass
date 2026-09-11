@@ -46,6 +46,28 @@ test("priceAt：V4 pro 峰谷价格", () => {
   assert.equal(peak.cny.output, 27);
 });
 
+test("V4.1 Flash policy starts exactly at September 10 04:00 UTC; old aliases follow it", () => {
+  const boundary = Date.parse("2026-09-10T04:00:00Z");
+  assert.equal(priceAt("deepseek-flash", boundary - 1), null);
+  assert.equal(priceAt("deepseek-v4-flash", boundary - 1).cny.input, 3);
+  const noon = priceAt("deepseek-flash", boundary);
+  assert.equal(noon.mode, "offPeak");
+  assert.deepEqual(noon.cny, { input: 1, cacheRead: 0.02, output: 4 });
+  assert.deepEqual(noon.usd, { input: 0.15, cacheRead: 0.003, output: 0.6 });
+  const peakTime = beijing(2026, 9, 11, 10);
+  const peak = priceAt("deepseek-flash", peakTime);
+  assert.deepEqual(peak.cny, { input: 2, cacheRead: 0.04, output: 8 });
+  assert.deepEqual(peak.usd, { input: 0.3, cacheRead: 0.006, output: 1.2 });
+  for (const alias of ["deepseek-v4-flash", "deepseek-v4-flash-vision-exp"]) {
+    assert.deepEqual(priceAt(alias, peakTime).cny, peak.cny);
+    assert.deepEqual(priceAt(alias, peakTime).usd, peak.usd);
+  }
+  assert.equal(impliedFxRate(peakTime), 6.6667);
+  const weekend = priceAt("deepseek-flash", beijing(2026, 9, 12, 10));
+  assert.deepEqual(weekend.cny, noon.cny);
+  assert.equal(priceAt("deepseek-v4-pro", beijing(2026, 9, 15, 10)).cny.input, 9, "Pro continues at its own price after September 14");
+});
+
 test("priceAt：vision-exp 与 flash 同价（含峰谷与周末谷价）", () => {
   const visionPeak = priceAt("deepseek-v4-flash-vision-exp", beijing(2026, 8, 20, 10));
   const flashPeak = priceAt("deepseek-v4-flash", beijing(2026, 8, 20, 10));

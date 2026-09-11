@@ -1,21 +1,25 @@
 {
-	"tag": "dsh-v0.1.1-rc.2",
+	"tag": "dsh-v0.1.5-rc.2",
 	"sentinels": {
 		"known-event-types": {
 			"path": "packages/core/session/src/known-event-types.ts",
-			"sha256": "23ed63cf702d770839baf1bee86754f69d33c040d05c3fc3654dd0424d7a9fcb"
+			"sha256": "8d60e002f68a641745ec2416c7c594e7b8f95f08fab1200aaa6a637e365500ca"
 		},
 		"persistence-readme": {
 			"path": "packages/session/session-persistence/README.md",
-			"sha256": "b63c8a72ba9f87357ebcb4a9150ec4da9967347747e62a55138b78f716bd87f3"
+			"sha256": "8a6805e393ac7ebca71cb41292d972d41a142fd95518fbff9fb9deeefac4d5dd"
 		},
 		"llm-types": {
 			"path": "packages/llm/llm/src/types.ts",
-			"sha256": "a5b57262793677767353f321b2853ad86f3c1f048780d5f83deed4e08dbc058b"
+			"sha256": "d243caef9bc6fcb72b2d81227c631c63d2b82203bb4b6e4b3bd3748e0a5e1717"
 		},
 		"deepseek-readme": {
 			"path": "packages/llm/llm-deepseek/README.md",
-			"sha256": "bf8bbaf9193036b657512fbc19f1c99eb203cdf5e97d895e403b5a6c18852efa"
+			"sha256": "235aeaf0e877dac90f60012e1ec3c180a39d3de2d7a69ba436b0e95731e9fc2e"
+		},
+		"session-handle": {
+			"path": "packages/session/session-persistence/src/handle.ts",
+			"sha256": "2fd8b5c5188ffdf5adee78a260b3dd0a9be97e5eb9fcdb5aafae5a8ed5471a31"
 		}
 	},
 	"keywordLines": {
@@ -25,10 +29,9 @@
 			"| { type: 'usage'; usage: TokenUsage }"
 		],
 		"deepseek-readme": [
-			"- Streaming only (`stream_options.include_usage` always on). `usage` may arrive attached to the finish chunk or as a trailing usage-only chu",
-			"An unchanged assembled prefix, including deterministically encoded retained images and placeholders, is eligible for DeepSeek cache reuse, w",
-			"Provider tokenization governs exact text and image-token input. Reasoning passback carries every reasoned turn's chain of thought into later",
-			"`streamIdleTimeoutMs` bounds each outstanding provider read, including the initial `fetch`, without counting time the consumer spends betwee"
+			"An unchanged assembled prefix is eligible for DeepSeek cache reuse, which this adapter reports in usage. Deterministic request-image bytes d",
+			"One `stream()` call normally makes one chat request: resolve deterministic request images, prefer Files ids, prepare any registered top-leve",
+			"Provider tokenization governs exact text and image-token input. The adapter declares per-route `imageRequestPricing`: it reproduces oldest-f"
 		]
 	}
 }
