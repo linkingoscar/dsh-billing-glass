@@ -1,25 +1,29 @@
 {
-	"tag": "dsh-v0.1.5-rc.2",
+	"tag": "dsh-v0.1.6-alpha.2",
 	"sentinels": {
 		"known-event-types": {
 			"path": "packages/core/session/src/known-event-types.ts",
-			"sha256": "8d60e002f68a641745ec2416c7c594e7b8f95f08fab1200aaa6a637e365500ca"
+			"sha256": "5cc69bf21e79363cdc37d4f3a813a587ceec82e32813efa47b4b34200013fd00"
 		},
 		"persistence-readme": {
 			"path": "packages/session/session-persistence/README.md",
-			"sha256": "8a6805e393ac7ebca71cb41292d972d41a142fd95518fbff9fb9deeefac4d5dd"
-		},
-		"llm-types": {
-			"path": "packages/llm/llm/src/types.ts",
-			"sha256": "d243caef9bc6fcb72b2d81227c631c63d2b82203bb4b6e4b3bd3748e0a5e1717"
-		},
-		"deepseek-readme": {
-			"path": "packages/llm/llm-deepseek/README.md",
-			"sha256": "235aeaf0e877dac90f60012e1ec3c180a39d3de2d7a69ba436b0e95731e9fc2e"
+			"sha256": "505002413af0e9166236f774ada557124f38b2cb40f2e464b9dff1b86e85f0ae"
 		},
 		"session-handle": {
 			"path": "packages/session/session-persistence/src/handle.ts",
 			"sha256": "2fd8b5c5188ffdf5adee78a260b3dd0a9be97e5eb9fcdb5aafae5a8ed5471a31"
+		},
+		"session-list": {
+			"path": "packages/api/session-controller/src/client/sessions/service.ts",
+			"sha256": "9774dbbbb4ae8915134c6da8707f91147df831c54f1a44916d4cfe2367e9298f"
+		},
+		"llm-types": {
+			"path": "packages/llm/llm/src/types.ts",
+			"sha256": "713bdc8bfdb13b6b4637c76a0a4ae21fea52b98ae6da84174e2f68a1d6a8f5e6"
+		},
+		"deepseek-readme": {
+			"path": "packages/llm/llm-deepseek/README.md",
+			"sha256": "3bf048d0b5c8d6646ac9bab62888b785e6a8d0f453e845b494e8e6fc58f5e022"
 		}
 	},
 	"keywordLines": {
@@ -30,8 +34,8 @@
 		],
 		"deepseek-readme": [
 			"An unchanged assembled prefix is eligible for DeepSeek cache reuse, which this adapter reports in usage. Deterministic request-image bytes d",
-			"One `stream()` call normally makes one chat request: resolve deterministic request images, prefer Files ids, prepare any registered top-leve",
-			"Provider tokenization governs exact text and image-token input. The adapter declares per-route `imageRequestPricing`: it reproduces oldest-f"
+			"One `stream()` call normally makes one model request: resolve deterministic request images, prefer Files ids, prepare any registered top-lev",
+			"Provider tokenization governs exact text and image-token input. The adapter declares per-route `imageRequestPricing`: it prices each occurre"
 		]
 	}
 }

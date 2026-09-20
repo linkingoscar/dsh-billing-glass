@@ -1,7 +1,7 @@
 # dsh-billing-glass — 液态玻璃计费悬浮卡
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.2-informational)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.5.3-informational)](CHANGELOG.md)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -30,6 +30,8 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
   折射光斑层 + 柔和悬浮投影；自动跟随 `--dsw-*` 亮/暗主题。
 - **逐条消息费用角标**：每条 assistant 消息动作条上显示当条费用小徽章
   （悬停见输入/缓存/输出 token 拆分与模型）。
+  在 Harness 0.1.6 中，悬浮卡跟随主会话，各个面板的消息角标独立刷新，
+  侧边会话也能恢复历史费用。
 - **设置卡片**：设置面板新增「计费悬浮卡」页（Harness v0.1.0-rc.7+；更早宿主
   自动隐藏）：可关闭悬浮胶囊 / 逐条费用角标，并可一键恢复悬浮卡默认位置；
   偏好即时生效，仅保存在本机浏览器。

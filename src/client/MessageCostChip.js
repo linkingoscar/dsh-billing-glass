@@ -1,7 +1,7 @@
 // 逐条消息费用角标（订阅 messageCostStore，异步刷新后自动重渲染）。
 import { jsx, useState, useEffect } from "./runtime.js";
 import { currencySymbol, formatMoney, formatTokens } from "./format.js";
-import { subscribeMessageStore, readMessageCost } from "./message-store.js";
+import { subscribeMessageStore, readMessageCost, watchMessageSession } from "./message-store.js";
 import { loadPrefs, subscribePrefs } from "./prefs.js";
 
 /**
@@ -13,6 +13,11 @@ export function MessageCostChip({ messageId, sessionId }) {
 	const [prefs, setPrefs] = useState(loadPrefs);
 	useEffect(() => subscribeMessageStore(() => setTick((/** @type {number} */ t) => t + 1)), []);
 	useEffect(() => subscribePrefs(setPrefs), []);
+	useEffect(() => {
+		if (prefs.costChip !== false && typeof sessionId === "string" && sessionId !== "") {
+			return watchMessageSession(sessionId);
+		}
+	}, [sessionId, prefs.costChip]);
 	if (prefs.costChip === false) return null;
 	if (typeof messageId !== "string" || typeof sessionId !== "string") return null;
 	const record = readMessageCost(sessionId, messageId);

@@ -4,7 +4,7 @@ import { POLL_MS, STATE_PATH, POS_KEY, COLLAPSED_KEY, CARD_W, BOTTOM_CLAMP_OFFSE
 import { currencySymbol, formatMoney, formatTokens, formatTime, clamp, loadPos, loadCollapsed } from "./format.js";
 import { modelBadgeFor } from "./model-badge.js";
 import { injectStyles, glass, sheen, glassButton, RefreshIcon, InfoIcon, TokenBar } from "./visuals.js";
-import { refreshLedger } from "./message-store.js";
+import { mainSessionId } from "./session-selection.js";
 import { loadPrefs, subscribePrefs } from "./prefs.js";
 
 /** state 路由响应里的供应商行（/api/billing-glass/state providers[i]）。
@@ -53,7 +53,7 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
 			const loadAbortRef = useRef(/** @type {AbortController|null} */ (null));
 			useEffect(() => { posRef.current = pos; }, [pos]);
 
-			const currentSessionId = typeof useSessions === "function" ? useSessions((/** @type {{current?: string}} */ s) => s.current) : void 0;
+			const currentSessionId = typeof useSessions === "function" ? useSessions(mainSessionId) : void 0;
 
 			useEffect(() => { injectStyles(); }, []);
 
@@ -86,10 +86,6 @@ import { loadPrefs, subscribePrefs } from "./prefs.js";
 					setPhase("ready");
 					setMessage("");
 					setUpdatedAt(new Date());
-					// 顺带刷新当前会话的逐条消息账本（角标数据）。
-					if (typeof currentSessionId === "string" && currentSessionId !== "") {
-						refreshLedger(currentSessionId);
-					}
 				} catch (error) {
 					if (error !== null && typeof error === "object" && /** @type {{name?: string}} */ (error).name === "AbortError") return;
 					if (!mounted.current || seq !== loadSeqRef.current) return;

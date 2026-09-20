@@ -78,6 +78,14 @@ function harness(t) {
   });
   return {
     model, ctx,
+    async ledger() {
+      let body;
+      await routes.get("/api/billing-glass/ledger")({ url: "/api/billing-glass/ledger?sessionId=s1", method: "GET" }, {
+        writeHead(status) { assert.equal(status, 200); },
+        end(value) { body = JSON.parse(value); }
+      });
+      return body.messages;
+    },
     emit(event) { listener({ id: "s1" }, event); },
     async state(full = false) {
       let body;
@@ -90,6 +98,18 @@ function harness(t) {
     }
   };
 }
+
+test("a sidebar ledger request replays history without loading the main billing card", async t => {
+  const h = harness(t);
+  const messages = await h.ledger();
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].messageId, "m1");
+  assert.ok(messages[0].costNative > 0);
+  assert.equal(h.model.reads, 1);
+  assert.equal(h.model.closed, 1);
+  await h.ledger();
+  assert.equal(h.model.reads, 1, "repeated chip polling uses the revision cache");
+});
 
 test("SessionHandle: cold replay, live dedupe, revision cache and frozen historical prices", async (t) => {
   let now = TIME;

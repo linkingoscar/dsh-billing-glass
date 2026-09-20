@@ -48,6 +48,14 @@ const checks = [
 const missing = checks.filter(([pattern, path]) => !has(pattern, path)).map(([pattern, path]) => `${pattern} (${path})`);
 if (missing.length > 0) throw new Error(`${tag} 缺少插件依赖契约: ${missing.join(", ")}`);
 console.log(`${tag}: billing source anchors present (${checks.length}, ${handles ? "SessionHandle; checking read behavior next" : "legacy raw log"})`);
+// Check the actual list shape; slot names alone missed the removal of current.
+const listPath = execFileSync("git", ["-C", root, "grep", "-l", "export interface SessionListState", ref, "--", ":(glob)packages/**/src/**"], { encoding: "utf8" }).trim().split("\n")[0];
+const listSource = execFileSync("git", ["-C", root, "show", listPath], { encoding: "utf8" });
+const listShape = /export interface SessionListState \{([\s\S]*?)\n\}/.exec(listSource)?.[1] ?? "";
+if (!/\bcurrent[?:]/.test(listShape) && !(listShape.includes("byId:") && listSource.includes("readonly retainedBy:") && has("retainedBy.mainView", ":(glob)packages/client/**/src/**"))) {
+  throw new Error(`${tag}: unrecognized main-session selection contract`);
+}
+execFileSync(process.execPath, ["--test", fileURLToPath(new URL("../tests/verify-multisession-client.mjs", import.meta.url))], { stdio: "inherit" });
 if (handles) {
   const handlePath = "packages/session/session-persistence/src/handle.ts";
   const source = execFileSync("git", ["-C", root, "show", `${ref}:${handlePath}`], { encoding: "utf8" });

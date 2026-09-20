@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.2-informational)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.5.3-informational)](CHANGELOG.md)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -34,6 +34,8 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
   `--dsw-*` light/dark theme automatically.
 - **Per-message cost badge**: each assistant message's action bar shows a small cost
   chip (hover for the input/cache/output token split and model).
+  On Harness 0.1.6, the billing card follows the main conversation while message
+  chips refresh independently in every open pane, including historical sessions.
 - **Settings card**: a "Billing capsule" page in the settings panel
   (Harness v0.1.0-rc.7+; hidden automatically on older hosts): toggle the glass
   capsule / per-message cost chips, and reset the card position in one click.
