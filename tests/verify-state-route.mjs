@@ -1,7 +1,7 @@
 // 聚合路由集成冒烟：用 mock ctx 直接驱动 apply()，
 // 验证 /api/billing-glass/state 的 sessionId 传递、会话费用、
 // DeepSeek 余额缓存 TTL 与 POST 强刷路由（不访问真实网络）。
-import { test } from "node:test";
+import { test, mock, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,6 +10,11 @@ import { fileURLToPath } from "node:url";
 
 const temp = mkdtempSync(join(tmpdir(), "dsh-billing-glass-state-"));
 process.env.DSH_HOME = temp;
+// The response fixture describes an off-peak Sunday. Real wall-clock time made
+// the same route switch prices (and day/month buckets) depending on the test run.
+process.env.TZ = "UTC";
+mock.timers.enable({ apis: ["Date"], now: Date.parse("2026-09-20T12:00:00Z") });
+after(() => mock.timers.reset());
 
 let fetchCalls = 0;
 let balanceTotal = 100;

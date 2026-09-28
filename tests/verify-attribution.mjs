@@ -5,6 +5,21 @@ import assert from "node:assert/strict";
 import { resolveMessageContext, priceEventInto, upsertMessageSample, emptyCostRecord } from "../lib/index.js";
 import { deepseek } from "../lib/providers/deepseek.js";
 
+test("Harness account quota is not priced as API-key spending through the shared hostname", () => {
+  const event = {
+    type: "assistant/message",
+    data: { message: { source: { provider: "deepseek-official", model: "deepseek-flash" } } }
+  };
+  const context = resolveMessageContext(event, {
+    provider: "deepseek-account", model: "deepseek-flash", baseURL: "https://api.deepseek.com/anthropic"
+  });
+  assert.equal(context.provider, null);
+  assert.equal(context.model, "deepseek-flash");
+  assert.equal(resolveMessageContext(event, {
+    provider: "deepseek-official", model: "deepseek-flash", baseURL: "https://api.deepseek.com/anthropic"
+  }).provider, deepseek);
+});
+
 test("source/header 冲突：header provider/model 优先", () => {
   const context = resolveMessageContext({
     type: "assistant/message",

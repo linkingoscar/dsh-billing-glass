@@ -7,6 +7,16 @@
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-09-28
+
+### Fixed
+- 适配 Harness 0.1.7-rc.2 的账号/API Key 路由分离：`deepseek-account` 不再因
+  共用 API 域名而被误认为 API Key 按量消费。账号额度暂不计价，并显示未识别供应商。
+
+### Changed
+- 兼容矩阵加入 0.1.7-rc.2，覆盖会话选择、SessionHandle 历史读取和账号归属回归。
+- 保留原有 API Key 价格、历史价格快照与账本；更新后重启 Harness。
+
 ## [0.5.3] - 2026-09-20
 
 ### Fixed

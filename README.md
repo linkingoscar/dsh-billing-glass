@@ -1,7 +1,7 @@
 # dsh-billing-glass — Liquid-Glass Billing Overlay
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.5.3-informational)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.5.4-informational)](CHANGELOG.md)
 [![harness](https://img.shields.io/badge/DSH-community%20plugin-6366f1)](#)
 [![GitHub](https://img.shields.io/badge/GitHub-linkingoscar%2Fdsh--billing--glass-181717)](https://github.com/linkingoscar/dsh-billing-glass)
 
@@ -20,6 +20,10 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 **DeepSeek-first**, with an extension point for more API providers.
 
 ## Features
+
+Tested with Harness **0.1.7-rc.2**. API-key usage retains its existing pricing.
+Harness's `deepseek-account` quota is separate and is reported as an unrecognized
+provider; it is never estimated using API-key prices, even on a shared hostname.
 
 - **Always-on glass capsule**: status dot + provider name + balance at a glance; click
   to expand. The expanded card's header is draggable (position stored in localStorage;

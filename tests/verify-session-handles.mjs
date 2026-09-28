@@ -161,6 +161,16 @@ test("SessionHandle: unknown historical provider remains explicitly unrecognized
   assert.deepEqual(state.unrecognized, { provider: "acceptance-unknown", baseUrl: null, model: "unknown-model" });
 });
 
+test("SessionHandle: account history stays unrecognized even on the public API hostname", async (t) => {
+  const h = harness(t);
+  const config = { provider: "deepseek-account", model: "deepseek-flash", baseURL: "https://api.deepseek.com/anthropic" };
+  h.model.events = [{ ...header, data: { header: { config } } }];
+  const state = await h.state(true);
+  assert.equal(state.activeProvider, null);
+  assert.deepEqual(state.unrecognized, { provider: config.provider, baseUrl: config.baseURL, model: config.model });
+  assert.equal(state.providers.find(row => row.id === "deepseek").session, null);
+});
+
 test("SessionHandle: missing session does not open a handle", async (t) => {
   const h = harness(t);
   h.model.missing = true;
