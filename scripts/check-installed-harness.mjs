@@ -50,7 +50,7 @@ try {
     on() { return () => {}; }, logger: { warn(...args) { console.error(...args); } }
   });
   async function query() {
-    /** @type {{messages: Array<{messageId: string, costUsd: number}>}|undefined} */
+    /** @type {{messages: Array<{messageId: string, costUsd: number, pricingSnapshot: {mode: string, usd: {input: number}}}>}|undefined} */
     let body;
     await routes.get("/api/billing-glass/ledger")({ url: `/api/billing-glass/ledger?sessionId=${id}`, method: "GET" }, {
       writeHead(/** @type {number} */ code) { assert.equal(code, 200); }, end(/** @type {string} */ value) { body = JSON.parse(value); }
@@ -62,6 +62,8 @@ try {
   assert.equal(first.messages.length, 1);
   assert.equal(first.messages[0].messageId, "message-one");
   assert.equal(first.messages[0].costUsd, 0.15, "real persisted holiday request uses off-peak price");
+  assert.equal(first.messages[0].pricingSnapshot.mode, "offPeak");
+  assert.equal(first.messages[0].pricingSnapshot.usd.input, 0.15);
   const second = await query();
   assert.deepEqual(second.messages, first.messages, "repeat replay is idempotent");
   // A fresh write handle proves the plugin closed the real read handle and left the backend usable.

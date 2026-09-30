@@ -301,3 +301,6 @@ its copyright notice is retained in
 - Sources: [DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/) and [State Council 2026 holiday notice](https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html).
 - Verification includes source-contract checks, unit tests under multiple timezones, actual linked-plugin HTTP routes/auth rejection on official Harness, and its real JSONL persistence backend (create/append/close → billing replay/deduplication). No paid API calls or existing credentials were used. This does not claim a full browser visual audit or live provider-balance validation.
 - Re-run the optional real-backend check with `npm run check:harness:installed -- /path/to/official-harness-runtime` (that directory must contain the installed official packages in `node_modules`). Standard `npm test` stays offline and independent of a Harness installation.
+
+### Small follow-up: per-message pricing provenance
+Message chips now show an approximate local estimate (≈), with keyboard-focusable and screen-reader-labelled details identifying the stored pricing source, peak/off-peak mode and unit rates. Unpriced messages remain explicit, and old records with no snapshot say their historical source is unrecorded; the current catalog is not substituted. See [focused roadmap](ROADMAP.md).

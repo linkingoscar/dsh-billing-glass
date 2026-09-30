@@ -72,3 +72,41 @@ test("message chips share polls per session and release only their own pending r
   assert.equal(intervals.size, 0);
   assert.equal(pending[2].signal.aborted, true);
 });
+
+test("published message chip labels estimates and exposes keyboard/screen-reader pricing provenance", async () => {
+  const effects = [];
+  let client, chip;
+  const sandbox = {
+    URLSearchParams, AbortController, Intl,
+    setInterval: () => 1, clearInterval() {},
+    localStorage: { getItem: () => null },
+    fetch: async () => ({ ok: true, json: async () => ({ ok: true, messages: [{
+      messageId: "priced", costNative: .15, nativeCurrency: "USD", priced: true,
+      pricingSnapshot: { source: "frozen-v1", mode: "offPeak", usd: { input: .15, cacheRead: .003, output: .6 } }
+    }] }) }),
+    window: { __ModuleLoader__: { load(spec) {
+      client = spec.factory(name => name === "react" ? {
+        useState: value => [typeof value === "function" ? value() : value, () => {}],
+        useEffect: effect => effects.push(effect), useLayoutEffect() {},
+        useCallback: fn => fn, useRef: current => ({ current })
+      } : { jsx: (...args) => args, jsxs: (...args) => args });
+    } } }
+  };
+  vm.runInNewContext(readFileSync(new URL("../lib/client.js", import.meta.url), "utf8"), sandbox);
+  client.apply({ slots: {
+    inject: (_name, register) => register(),
+    register: (descriptor, component) => { if (descriptor.id === "billing-glass-cost") chip = component; }
+  } });
+  assert.equal(chip({ sessionId: "s1", messageId: "priced" }), null);
+  const disposers = effects.splice(0).map(effect => effect());
+  try {
+    await new Promise(resolve => setImmediate(resolve));
+    const [tag, props] = chip({ sessionId: "s1", messageId: "priced" });
+    assert.equal(tag, "span");
+    assert.match(props.children, /^≈/);
+    assert.equal(props.tabIndex, 0);
+    assert.equal(props["aria-label"], props.title);
+    assert.match(props.title, /frozen-v1/);
+    assert.match(props.title, /非官方账单/);
+  } finally { for (const dispose of disposers) if (typeof dispose === "function") dispose(); }
+});

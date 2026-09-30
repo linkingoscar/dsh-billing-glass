@@ -27,7 +27,8 @@
     "cordis.patch.yml",
     "README.md",
     "NOTICE",
-    "THIRD_PARTY_NOTICES.md"
+    "THIRD_PARTY_NOTICES.md",
+    "ROADMAP.md"
   ],
   "exports": {
     ".": "./lib/index.js",

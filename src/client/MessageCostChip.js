@@ -1,6 +1,6 @@
 // 逐条消息费用角标（订阅 messageCostStore，异步刷新后自动重渲染）。
 import { jsx, useState, useEffect } from "./runtime.js";
-import { currencySymbol, formatMoney, formatTokens } from "./format.js";
+import { messageCostPresentation } from "./message-cost-detail.js";
 import { subscribeMessageStore, readMessageCost, watchMessageSession } from "./message-store.js";
 import { loadPrefs, subscribePrefs } from "./prefs.js";
 
@@ -22,24 +22,12 @@ export function MessageCostChip({ messageId, sessionId }) {
 	if (typeof messageId !== "string" || typeof sessionId !== "string") return null;
 	const record = readMessageCost(sessionId, messageId);
 	if (record === void 0) return null;
-	const unpriced = record.priced === false;
-	const nativeCurrency = record.nativeCurrency ?? record.currency ?? "USD";
-	const recordCostNative = Number.isFinite(record.costNative)
-		? record.costNative
-		: Number.isFinite(record.cost) ? record.cost : 0;
-	const symbol = currencySymbol(nativeCurrency);
-	const label = unpriced ? "未计价" : formatMoney(recordCostNative, nativeCurrency);
-	const detail = unpriced
-		? `暂无价格，费用未计入 · 模型 ${record.model ?? "unknown"}`
-		: [
-			`输入 ${formatTokens(record.inputTokens)}`,
-			`缓存 ${formatTokens(record.cacheReadTokens)}`,
-			`输出 ${formatTokens(record.outputTokens)}`,
-			record.model ? `模型 ${record.model}` : null
-		].filter(Boolean).join(" · ");
+	const { unpriced, label, detail } = messageCostPresentation(record);
 	return jsx("span", {
 		"data-plugin": "dsh-billing-glass",
-		title: unpriced ? detail : `${symbol}${detail}`,
+		title: detail,
+		"aria-label": detail,
+		tabIndex: 0,
 		style: {
 			display: "inline-flex",
 			alignItems: "center",
