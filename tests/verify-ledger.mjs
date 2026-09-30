@@ -72,7 +72,7 @@ test("summary 今日/本月/累计聚合（USD）", () => {
   // 上月一条
   ledger.record(entry({ messageId: "d", costUsd: 1.6, time: Date.parse("2026-07-20T10:00:00+08:00") }));
 
-  const s = ledger.summary(now);
+  const s = ledger.summary(now, "Asia/Shanghai");
   const close = (a, b) => Math.abs(a - b) < 1e-9;
   assert.ok(close(s.today.costUsd, 0.3));
   assert.equal(s.today.calls, 2);
@@ -92,7 +92,7 @@ test("summary 按原生币种分组合计（单币种精确展示，无需汇率
   ledger.record(entry({ messageId: "b", costNative: 2.5, nativeCurrency: "CNY", costUsd: 0.35, time: Date.parse("2026-08-14T15:00:00+08:00") }));
   ledger.record(entry({ messageId: "c", costNative: 0.5, nativeCurrency: "USD", costUsd: 0.5, time: Date.parse("2026-08-14T16:00:00+08:00") }));
 
-  const s = ledger.summary(now);
+  const s = ledger.summary(now, "Asia/Shanghai");
   assert.ok(close(s.today.native.CNY, 4));
   assert.ok(close(s.today.native.USD, 0.5));
   assert.ok(close(s.total.native.CNY, 4));
@@ -193,8 +193,40 @@ test("summary 暴露未计价条数（fail closed 记录）", () => {
   const { ledger } = makeLedger();
   ledger.record(entry());
   ledger.record(entry({ messageId: "unpriced", priced: false, unpricedReason: "pricing_unknown", costNative: 0, costUsd: 0 }));
-  const s = ledger.summary(new Date("2026-08-14T20:00:00+08:00"));
+  const s = ledger.summary(new Date("2026-08-14T20:00:00+08:00"), "Asia/Shanghai");
   assert.equal(s.today.calls, 2);
   assert.equal(s.today.unpricedCalls, 1);
   assert.ok(Math.abs(s.today.costUsd - 0.21) < 1e-9, "未计价消息不得计入金额");
+});
+
+for (const suffix of ["", "\n", "\r\n"]) {
+  test(`append preserves complete EOF JSON across restart (suffix=${JSON.stringify(suffix)})`, (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "billing-glass-ledger-boundary-"));
+    const file = join(dir, "billing-glass-ledger.jsonl");
+    const original = JSON.stringify(entry({ messageId: "existing" })) + suffix;
+    writeFileSync(file, original);
+    const ledger = createLedger({}, { storagesDir: dir });
+    t.after(() => { ledger.dispose(); rmSync(dir, { recursive: true, force: true }); });
+    assert.equal(readFileSync(file, "utf8"), original, "loading valid EOF does not rewrite the file");
+    ledger.record(entry({ messageId: "second" }));
+    ledger.flushSync();
+    ledger.record(entry({ messageId: "third" }));
+    ledger.flushSync();
+    ledger.dispose();
+    const rows = readFileSync(file, "utf8").trim().split("\n").map(JSON.parse);
+    assert.deepEqual(rows.map(row => row.messageId), ["existing", "second", "third"]);
+    const reloaded = createLedger({}, { storagesDir: dir });
+    try {
+      assert.deepEqual(reloaded.querySession("s1").map(row => row.messageId), ["existing", "second", "third"]);
+      assert.equal(reloaded.health().degraded, false);
+    } finally { reloaded.dispose(); }
+  });
+}
+
+test("summary default follows local calendar without assuming the test runner timezone", (t) => {
+  const { dir, ledger } = makeLedger();
+  t.after(() => { ledger.dispose(); rmSync(dir, { recursive: true, force: true }); });
+  ledger.record(entry({ time: new Date(2026, 7, 14, 0, 1).getTime() }));
+  assert.equal(ledger.summary(new Date(2026, 7, 14, 23, 59)).today.calls, 1);
+  assert.equal(ledger.summary(new Date(2026, 7, 15, 0, 1)).today.calls, 0);
 });

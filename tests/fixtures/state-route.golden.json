@@ -14,7 +14,7 @@
   "ok": true,
   "pricingCatalog": {
     "source": "pi-ai",
-    "version": "0.85.1"
+    "version": "0.87.1"
   },
   "providers": [
     {

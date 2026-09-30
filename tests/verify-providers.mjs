@@ -63,7 +63,7 @@ test("官方目录计价：USD 供应商 costNative === costUsd === 目录价", 
 test("未知模型 fail closed：返回 null，绝不按 0 元计费", () => {
   const provider = matchProvider("pi-ai", "https://api.moonshot.cn/v1");
   assert.equal(provider.priceAt("brand-new-model-not-in-catalog", Date.now()), null);
-  assert.equal(provider.priceAt("kimi-k2-turbo-preview", Date.now()) !== null, true);
+  assert.equal(provider.priceAt("kimi-k2.6", Date.now()) !== null, true);
 });
 
 test("带 / 的合法 catalog model id：exact 命中不被 basename strip 破坏", () => {

@@ -136,3 +136,25 @@ test("costOf：原生币种与 USD 分开，不再返回模糊 cost", () => {
   assert.ok(Math.abs(usd.costNative - usd.costUsd) < 1e-9, "USD 供应商 costNative === costUsd");
   assert.equal(usd.nativeCurrency, "USD");
 });
+
+
+test("2026 Chinese holidays are off-peak, with boundaries and substitute weekends", () => {
+  for (const day of [1, 2, 5, 6, 7]) {
+    assert.equal(isPeak(beijing(2026, 10, day, 10)), false);
+    assert.equal(priceAt("deepseek-flash", beijing(2026, 10, day, 10)).usd.input, 0.15);
+  }
+  assert.equal(isPeak(beijing(2026, 9, 25, 10)), false, "Mid-Autumn weekday is a holiday");
+  assert.equal(isPeak(beijing(2026, 9, 30, 10)), true, "day before National Day is ordinary weekday");
+  assert.equal(isPeak(beijing(2026, 10, 8, 8, 59)), false);
+  assert.equal(isPeak(beijing(2026, 10, 8, 9)), true, "holiday ends before Oct 8 peak window");
+  assert.equal(isPeak(beijing(2026, 10, 8, 12)), false);
+  assert.equal(isPeak(beijing(2026, 10, 10, 10)), false, "substitute working Saturday is still a weekend under pricing policy");
+  assert.equal(priceAt("deepseek-v4-flash", beijing(2026, 10, 1, 10)).mode, "offPeak");
+});
+
+test("unknown holiday years fail closed only where holiday status changes the rate", () => {
+  assert.equal(isPeak(beijing(2027, 1, 4, 10)), null);
+  assert.equal(priceAt("deepseek-flash", beijing(2027, 1, 4, 10)), null);
+  assert.equal(isPeak(beijing(2027, 1, 4, 20)), false, "nighttime is unambiguously off-peak");
+  assert.equal(isPeak(beijing(2027, 1, 3, 10)), false, "Sunday is unambiguously off-peak");
+});

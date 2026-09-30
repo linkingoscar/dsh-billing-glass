@@ -17,7 +17,8 @@
     "typecheck": "tsc -p tsconfig.checkjs.json",
     "lint": "oxlint .",
     "check:generated": "npm run build:client && npm run sync:providers:check && git diff --exit-code -- lib/client.js lib/providers/catalog.generated.js",
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "check:harness:installed": "node scripts/check-installed-harness.mjs"
   },
   "files": [
     "lib",
@@ -45,7 +46,7 @@
     }
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "0.85.1",
+    "@earendil-works/pi-ai": "0.87.1",
     "@types/node": "^22.20.1",
     "oxlint": "^1.15.0",
     "typescript": "^5.9.2"

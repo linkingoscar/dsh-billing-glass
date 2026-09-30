@@ -21,7 +21,7 @@ billing card (session cost, daily spend, token-bucket breakdown, provider list).
 
 ## Features
 
-Tested with Harness **0.1.7-rc.2**. API-key usage retains its existing pricing.
+Tested with Harness **0.2.0-rc.2** (developer prerelease, commit `639ed015397290b3745d163aafe02ffee4aa3f84`). API-key usage retains its existing pricing.
 Harness's `deepseek-account` quota is separate and is reported as an unrecognized
 provider; it is never estimated using API-key prices, even on a shared hostname.
 
@@ -291,3 +291,13 @@ The pricing engine was ported from
 [bpc-oss/dsh-web-billing](https://github.com/bpc-oss/dsh-web-billing) (MIT license);
 its copyright notice is retained in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) as required by the MIT terms.
+
+
+### 2026-09-30 compatibility verification (unreleased)
+
+- Pricing catalog is pinned/regenerated from pi-ai **0.87.1**, the version resolved by Harness 0.2.0-rc.2's lockfile. Historical ledger snapshots remain unchanged.
+- Complete EOF JSON without a newline is safely separated before the next append; restart regression tests cover LF, CRLF and no LF.
+- DeepSeek's weekday peak windows exclude Chinese public holidays. The reviewed calendar covers **2026** only; substitute working weekends remain off-peak under the official Mon–Fri rule. In an unreviewed year, a weekday peak-window price is **unpriced** until the calendar is updated; weekends and out-of-window hours remain unambiguously off-peak. No stored historical prices are rewritten.
+- Sources: [DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/) and [State Council 2026 holiday notice](https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html).
+- Verification includes source-contract checks, unit tests under multiple timezones, actual linked-plugin HTTP routes/auth rejection on official Harness, and its real JSONL persistence backend (create/append/close → billing replay/deduplication). No paid API calls or existing credentials were used. This does not claim a full browser visual audit or live provider-balance validation.
+- Re-run the optional real-backend check with `npm run check:harness:installed -- /path/to/official-harness-runtime` (that directory must contain the installed official packages in `node_modules`). Standard `npm test` stays offline and independent of a Harness installation.

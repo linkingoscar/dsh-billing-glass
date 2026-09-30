@@ -20,7 +20,7 @@ DeepSeek Harness Web GUI 的 API 计费悬浮卡插件：**液态玻璃材质**�
 
 ## 功能
 
-已适配 Harness **0.1.7-rc.2**。API Key 消费沿用原有计价；新版 `deepseek-account`
+已验证 Harness **0.2.0-rc.2**（开发预发布版）。API Key 消费沿用原有计价；新版 `deepseek-account`
 账号额度独立管理，当前显示为未识别供应商，不会因共用 API 域名而套用 API Key 单价。
 
 - **玻璃胶囊常驻**：状态点 + 供应商名 + 余额，一瞥即得，不用切窗口查余额；
@@ -261,3 +261,13 @@ CI（`.github/workflows/ci.yml`）会对每个 push/PR 执行同样的门禁。
 定价引擎移植自 [bpc-oss/dsh-web-billing](https://github.com/bpc-oss/dsh-web-billing)
 （MIT 许可），其版权声明按 MIT 要求保留在
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+
+### 2026-09-30 未发布修复与验证
+
+- pi-ai 价格目录按 Harness 锁文件同步为 0.87.1；已有账本的历史价格快照不重算
+- 修复完整 JSON 尾行缺少换行后继续追加导致两条账目粘连的问题，覆盖追加和重启恢复
+- 按[官方定价](https://api-docs.deepseek.com/quick_start/pricing/)及[国务院 2026 年节假日通知](https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html)，节假日全天谷价；调休上班的周末仍按官方“周一至周五”限定保持谷价
+- 节假日日历仅审定 **2026 年**。未知年份的工作日高峰窗口暂标“未计价”，避免猜测节假日；周末及非高峰时间仍可确定为谷价。没有改写已有历史账目
+- 验证包含多时区单测、最新版宿主契约、真实宿主 HTTP 路由与未认证拒绝，以及真实 JSONL 后端写入→费用回放→重复查询去重；未调用付费模型、未使用现有凭证，不等同于完整浏览器视觉验收或真实余额验证
+- 可选真实后端复验：`npm run check:harness:installed -- /path/to/official-harness-runtime`
